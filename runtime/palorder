@@ -10,7 +10,7 @@ while :; do
   theme=midnight
   [ ! -f "$CONFIG_DIR/settings" ] || theme=$(sed -n 's/^THEME=//p' "$CONFIG_DIR/settings" | head -n 1)
   case "$theme" in violet) accent="\Zb\Z5" ;; amber) accent="\Zb\Z3" ;; emerald) accent="\Zb\Z2" ;; mono) accent="\Zb\Z7" ;; *) accent="\Zb\Z6" ;; esac
-  choice=$(dialog --colors --clear --backtitle "\${accent}PALORDER • BOOT MANAGER\Zn" --title "Palorder Boot Menu" --menu "\n  Use ↑/↓ and Enter to choose a session.\n  GRUB-inspired menu for the iSH environment.\n" 22 72 11 \
+  choice=$(dialog --colors --clear --backtitle "${accent}PALORDER • BOOT MANAGER\Zn" --title "Palorder Boot Menu" --menu "\n  Use ↑/↓ and Enter to choose a session.\n  GRUB-inspired menu for the iSH environment.\n" 22 72 11 \
     "terminal" "Terminal session" "control" "Control Center" "apps" "Lua application manager" "check" "Check for Palorder updates" "setup" "First-run setup wizard" "packages" "Package manager" "utilities" "System utilities and diagnostics" "task" "Run a command" "update" "Update / repair Palorder" "safe" "Safe shell (skip Palorder UI)" "exit" "Exit to shell" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     terminal) "$BIN_DIR/palorder-terminal" ;; control) "$BIN_DIR/palorder-control" ;;
