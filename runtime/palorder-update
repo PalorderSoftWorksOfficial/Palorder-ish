@@ -5,7 +5,7 @@ BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
 STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo update)
 BACKUP_DIR="$CONFIG_DIR/backups/update-$STAMP"
-FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control"
 command -v curl >/dev/null 2>&1 || { printf '%s\n' "curl is required."; exit 1; }
 mkdir -p "$BIN_DIR" "$CONFIG_DIR"
 tmpdir="$CONFIG_DIR/update.$$"
