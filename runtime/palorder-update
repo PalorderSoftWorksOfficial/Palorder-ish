@@ -1,5 +1,21 @@
 #!/bin/sh
 set -eu
+case "${1:-}" in
+  "") ;;
+  --help|-h)
+    cat <<'HELP'
+palorder-update — update managed Palorder runtime scripts
+
+Usage:
+  palorder-update          Stage upstream files, back up current scripts, update
+  palorder-update --help   Show this help
+
+The updater does not update Alpine packages. Use apk update and apk upgrade
+for operating-system packages. Preferences and app data are preserved.
+HELP
+    exit 0 ;;
+  *) echo "Unknown option: $1" >&2; echo "Usage: palorder-update [--help]" >&2; exit 2 ;;
+esac
 BASE="https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main"
 BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
