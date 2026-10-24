@@ -97,7 +97,7 @@ api.ui.password=function(title,prompt)
   assert(type(title)=="string" and type(prompt)=="string","password expects strings")
   local out=dialog({"--stdout","--title",title,"--passwordbox",prompt,"10","64"})
   if not out then return nil end
-  return out:gsub("\\n$","")
+  return (out:sub(-1) == string.char(10)) and out:sub(1,-2) or out
 end
 api.ui.checklist=function(title,prompt,entries)
   assert(type(entries)=="table","checklist expects an array of {id,label,selected?}")
@@ -127,7 +127,7 @@ api.system.network_info=function()
   local h=io.open("/etc/resolv.conf","r")
   local dns=h and h:read("*a") or "DNS configuration unavailable"
   if h then h:close() end
-  return "Runtime: iSH / Alpine userland\\nNetwork access depends on iSH and iOS permissions.\\nDNS configuration:\\n"..dns
+  return table.concat({"Runtime: iSH / Alpine userland","Network access depends on iSH and iOS permissions.","DNS configuration:",dns}, string.char(10))
 end
 api.storage={
   get=function(key)
