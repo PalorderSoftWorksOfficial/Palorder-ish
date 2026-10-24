@@ -1,6 +1,6 @@
 # Palorder iSH
 
-A terminal-first, dialog-powered Alpine environment for [iSH on iOS](https://github.com/ish-app/ish). It provides a welcome screen, setup assistant, package shortcuts, utilities, command runner, and updater. It is not a full graphical Linux desktop.
+A terminal-first, dialog-powered Alpine environment for [iSH on iOS](https://github.com/ish-app/ish). It provides a GRUB-inspired keyboard-controlled boot menu, splash screen, multi-step setup wizard, Control Center, terminal session, package shortcuts, utilities, command runner, and updater. It is not a full graphical Linux desktop.
 
 ## Install
 
