@@ -34,6 +34,7 @@ say "Installing common command-line, archive, editor, networking and development
 OPTIONAL_GROUPS="wget gawk less file xz zip unzip diffutils patch bc|py3-pip jq nano vim tmux openssh-client procps tree|net-tools|iproute2|bind-tools iputils|build-base musl-dev linux-headers"
 old_ifs=$IFS
 IFS='|'
+# shellcheck disable=SC2086
 for group in $OPTIONAL_GROUPS; do
   IFS=' '
   # shellcheck disable=SC2086
