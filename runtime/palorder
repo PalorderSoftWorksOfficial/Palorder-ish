@@ -2,6 +2,28 @@
 set -eu
 BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ]; then
+  cat <<'HELP'
+Palorder iSH — terminal-first environment for iSH/Alpine
+
+Usage:
+  palorder                 Open the interactive boot menu
+  palorder help            Show this command reference
+  palorder-app --help      Manage/run Lua applications
+  check-update --help      Check upstream runtime versions/files
+  palorder-update --help   Update managed runtime scripts
+  palorder-control         Open Control Center
+  palorder-setup           Open the setup wizard
+  palorder-settings        Change theme, banner and display name
+  palorder-packages        Search/install/remove Alpine packages
+  palorder-utilities       Inspect system, storage and networking
+  palorder-run-task        Run a manually confirmed shell command
+  palorder-terminal        Start a shell in the configured workspace
+
+This runs inside iSH's Alpine userland, not as a full Linux VM/desktop.
+HELP
+  exit 0
+fi
 [ -x "$BIN_DIR/palorder-boot" ] && "$BIN_DIR/palorder-boot"
 mkdir -p "$CONFIG_DIR"
 if [ ! -f "$CONFIG_DIR/setup-complete" ] && [ -x "$BIN_DIR/palorder-setup" ]; then "$BIN_DIR/palorder-setup"; : > "$CONFIG_DIR/setup-complete"; fi
