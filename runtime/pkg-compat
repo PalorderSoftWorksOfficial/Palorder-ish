@@ -40,7 +40,7 @@ case "$frontend:$command_name" in
     exec apk info -a "$@"
     ;;
   apt:list|apt-get:list)
-    exec apk info "$@"
+    exec apk info
     ;;
   apt:policy|apt-get:policy)
     [ "$#" -gt 0 ] || { echo "Usage: $frontend policy PACKAGE" >&2; exit 2; }
@@ -61,6 +61,7 @@ case "$frontend:$command_name" in
     exec apk upgrade
     ;;
   pacman:-S|pacman:-Sy*)
+    while [ "$#" -gt 0 ]; do case "$1" in --needed|--noconfirm) shift ;; *) break ;; esac; done
     [ "$#" -gt 0 ] || { echo "Usage: pacman -S PACKAGE..." >&2; exit 2; }
     exec apk add --no-cache "$@"
     ;;
@@ -77,7 +78,7 @@ case "$frontend:$command_name" in
     exec apk info -a "$@"
     ;;
   pacman:-Q|pacman:-Qe|pacman:-Qq)
-    exec apk info "$@"
+    exec apk info
     ;;
   pacman:-Qi)
     [ "$#" -gt 0 ] || { echo "Usage: pacman -Qi PACKAGE" >&2; exit 2; }
