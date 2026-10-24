@@ -1,34 +1,83 @@
 #!/bin/sh
 set -eu
+usage() {
+  cat <<'HELP'
+palorder-packages — Alpine package manager for Palorder iSH
+
+Usage:
+  palorder-packages                 Open interactive package manager
+  palorder-packages search TERM     Search available package names
+  palorder-packages install PKG...  Install packages
+  palorder-packages remove PKG...   Remove packages
+  palorder-packages list            List installed packages
+  palorder-packages info PACKAGE    Show package metadata
+  palorder-packages update          Refresh indexes
+  palorder-packages upgrade         Upgrade installed packages
+  palorder-packages --help          Show help
+
+Package names are Alpine package names. The apt/pacman commands are compatibility
+wrappers; apk remains the native package manager.
+HELP
+}
+show_log() {
+  title=$1
+  shift
+  log="${HOME:-/root}/.config/palorder/package-manager.log"
+  mkdir -p "${HOME:-/root}/.config/palorder"
+  if "$@" >"$log" 2>&1; then
+    if command -v dialog >/dev/null 2>&1; then dialog --title "$title" --textbox "$log" 22 76; else cat "$log"; fi
+  else
+    if command -v dialog >/dev/null 2>&1; then dialog --title "$title — failed" --textbox "$log" 22 76; else cat "$log" >&2; fi
+    return 1
+  fi
+}
+case "${1:-}" in
+  --help|-h) usage; exit 0 ;;
+  search) [ "$#" -eq 2 ] || { echo "Usage: palorder-packages search TERM" >&2; exit 2; }; exec apk search "$2" ;;
+  install) [ "$#" -ge 2 ] || { echo "Usage: palorder-packages install PACKAGE..." >&2; exit 2; }; shift; exec apk add --no-cache "$@" ;;
+  remove) [ "$#" -ge 2 ] || { echo "Usage: palorder-packages remove PACKAGE..." >&2; exit 2; }; shift; exec apk del "$@" ;;
+  list) exec apk info ;;
+  info) [ "$#" -eq 2 ] || { echo "Usage: palorder-packages info PACKAGE" >&2; exit 2; }; exec apk info -a "$2" ;;
+  update) exec apk update ;;
+  upgrade) exec apk upgrade ;;
+  "") ;;
+  *) echo "Unknown command: $1" >&2; usage >&2; exit 2 ;;
+esac
 while :; do
-  choice=$(dialog --clear --title "Package manager" --menu "Manage packages through Alpine apk." 16 62 6 \
-    "update" "Refresh package indexes" "upgrade" "Upgrade installed packages" "search" "Search package names" "install" "Install package(s)" "remove" "Remove package(s)" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+  choice=$(dialog --clear --title "Palorder Package Manager" --menu "Alpine apk • Current shell: $(sed -n 's/^SHELL=//p' "${HOME:-/root}/.config/palorder/settings" 2>/dev/null | head -n 1)" 20 70 10 \
+    "update" "Refresh repository indexes" "upgrade" "Upgrade installed packages" \
+    "search" "Search packages" "install" "Install package(s)" "remove" "Remove package(s)" \
+    "list" "List installed packages" "info" "Inspect package details" \
+    "shell" "Choose default shell (Bash is default)" "aliases" "apt/pacman compatibility help" \
+    "history" "Release notes and commit registry" "back" "Return to menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
-    update) apk update; dialog --title "Package indexes" --msgbox "apk update finished. Review any terminal errors." 8 54 ;;
-    upgrade) if dialog --title "Confirm upgrade" --yesno "Upgrade installed packages now? This may change many system packages." 9 56; then apk upgrade; fi ;;
+    update) show_log "Refresh indexes" apk update || : ;;
+    upgrade)
+      if dialog --title "Confirm upgrade" --yesno "Upgrade installed packages? This may change many packages." 9 60; then show_log "Package upgrade" apk upgrade || :; fi ;;
     search)
-      term=$(dialog --stdout --title "Search packages" --inputbox "Package name or keyword:" 10 56) || continue
+      term=$(dialog --stdout --title "Search packages" --inputbox "Package name or keyword:" 10 58) || continue
       [ -n "$term" ] || continue
-      result=$(apk search "$term" 2>&1 || true)
-      dialog --title "Search results" --msgbox "$result" 20 70 ;;
-    install)
-      names=$(dialog --stdout --title "Install packages" --inputbox "Package names separated by spaces:" 10 60) || continue
+      show_log "Search results" apk search "$term" || : ;;
+    install|remove)
+      names=$(dialog --stdout --title "$choice packages" --inputbox "Package names separated by spaces:" 10 60) || continue
       [ -n "$names" ] || continue
-      if dialog --title "Confirm install" --yesno "Install these package names?\n\n$names" 10 60; then
+      if dialog --title "Confirm $choice" --yesno "$choice these Alpine package names?\n\n$names" 10 60; then
+        log="${HOME:-/root}/.config/palorder/package-manager.log"
         set -f
         # shellcheck disable=SC2086
-        apk add --no-cache $names
+        if [ "$choice" = install ]; then apk add --no-cache $names >"$log" 2>&1; else apk del $names >"$log" 2>&1; fi
+        rc=$?
         set +f
+        dialog --title "Package operation (exit $rc)" --textbox "$log" 22 76
       fi ;;
-    remove)
-      names=$(dialog --stdout --title "Remove packages" --inputbox "Package names separated by spaces:" 10 60) || continue
-      [ -n "$names" ] || continue
-      if dialog --title "Confirm removal" --yesno "Remove these package names?\n\n$names" 10 60; then
-        set -f
-        # shellcheck disable=SC2086
-        apk del $names
-        set +f
-      fi ;;
+    list) show_log "Installed packages" apk info || : ;;
+    info)
+      name=$(dialog --stdout --title "Package information" --inputbox "Package name:" 9 52) || continue
+      [ -n "$name" ] || continue
+      show_log "Package details: $name" apk info -a "$name" || : ;;
+    shell) /root/bin/palorder-shell ;;
+    aliases) dialog --title "Package command compatibility" --msgbox "apt update                 -> apk update\napt install bash git      -> apk add --no-cache bash git\napt remove PACKAGE        -> apk del PACKAGE\npacman -Syu                -> apk update + apk upgrade\npacman -S bash             -> apk add --no-cache bash\n\nThese translate common commands only; they do not install Debian/Arch packages." 16 68 ;;
+    history) /root/bin/palorder-history ;;
     back) exit 0 ;;
   esac
 done
