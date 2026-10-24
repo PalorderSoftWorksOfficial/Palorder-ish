@@ -81,6 +81,7 @@ for file in $FILES; do
   mv "$STAGE/$file" "$BIN_DIR/$file"
 done
 [ -f "$CONFIG_DIR/settings" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$CONFIG_DIR/settings"
+grep -q '^SHELL=' "$CONFIG_DIR/settings" || printf 'SHELL=/bin/bash\n' >> "$CONFIG_DIR/settings"
 [ -f "$CONFIG_DIR/identity" ] || printf '%s\n' "Palorder User" > "$CONFIG_DIR/identity"
 cp "$BIN_DIR/palorder-version" "$CONFIG_DIR/version"
 PROFILE_LINE='export PATH="/root/bin:$PATH"'
