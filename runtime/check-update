@@ -1,0 +1,48 @@
+#!/bin/sh
+set -eu
+BASE="https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main"
+CONFIG="\${HOME:-/root}/.config/palorder"
+BIN="\${HOME:-/root}/bin"
+usage() {
+  cat <<'HELP'
+check-update — check whether Palorder runtime files changed upstream
+
+Usage:
+  check-update             Check version metadata
+  check-update --files     Compare managed runtime scripts with upstream
+  check-update --help      Show this help
+
+Options:
+  --files   Compare downloaded files without installing or executing them.
+  --help    Show usage.
+
+Install after review with: palorder-update
+Network access is required. The checker never executes downloaded code.
+HELP
+}
+mode=version
+case "\${1:-}" in
+  "") ;;
+  --files) mode=files ;;
+  --help|-h) usage; exit 0 ;;
+  *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+esac
+command -v curl >/dev/null 2>&1 || { echo "curl is required (apk add curl)." >&2; exit 1; }
+if [ "$mode" = version ]; then
+  remote=$(curl -fLsS --connect-timeout 10 --max-time 30 "$BASE/palorder-version") || { echo "Unable to check upstream version (network/server error)." >&2; exit 1; }
+  local_version=unknown
+  [ ! -f "$CONFIG/version" ] || local_version=$(cat "$CONFIG/version")
+  printf 'Installed version: %s\nUpstream version:  %s\n' "$local_version" "$remote"
+  if [ "$local_version" = "$remote" ]; then echo "Palorder is up to date."; else echo "An update may be available. Run: palorder-update"; fi
+  exit 0
+fi
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version"
+tmp="$CONFIG/check.$$"
+mkdir -p "$tmp"
+trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+changed=0
+for file in $FILES; do
+  if ! curl -fLsS --connect-timeout 10 --max-time 45 "$BASE/runtime/$file" -o "$tmp/$file"; then echo "Could not fetch upstream file: $file" >&2; exit 1; fi
+  if [ ! -f "$BIN/$file" ] || ! cmp -s "$tmp/$file" "$BIN/$file"; then printf 'UPDATE  %s\n' "$file"; changed=1; else printf 'current %s\n' "$file"; fi
+done
+if [ "$changed" -eq 0 ]; then echo "All compared runtime files match upstream."; else echo "Updates found. Review changes, then run palorder-update."; fi
