@@ -8,7 +8,7 @@ BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
 STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo install)
 BACKUP_DIR="$CONFIG_DIR/backups/$STAMP"
-FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman"
 say() { printf '%s\n' "Palorder iSH: $*"; }
 fail() { say "ERROR: $*" >&2; exit 1; }
 MODE=update
@@ -22,12 +22,24 @@ esac
 command -v curl >/dev/null 2>&1 || fail "curl is required. Install it with: apk add curl"
 command -v apk >/dev/null 2>&1 || fail "apk was not found. This installer requires Alpine/iSH."
 mkdir -p "$BIN_DIR" "$CONFIG_DIR"
-say "Ensuring dialog and Lua 5.4 are installed..."
-if ! apk add --no-cache dialog lua5.4; then
-  say "Package installation failed; refreshing Alpine indexes and retrying..."
-  apk update || fail "Could not refresh Alpine package indexes. Check network access and /etc/apk/repositories."
-  apk add --no-cache dialog lua5.4 || fail "Could not install dialog/Lua 5.4. Check package availability and /etc/apk/repositories."
+say "[1/4] Refreshing Alpine package indexes..."
+if ! apk update; then fail "apk update failed. Check network access and /etc/apk/repositories."; fi
+say "[2/4] Installing the Palorder runtime and essential Linux command-line tools..."
+BASE_PACKAGES="bash dialog lua5.4 curl wget ca-certificates coreutils findutils grep sed gawk less file tar gzip xz zip unzip git python3 py3-pip jq nano vim tmux openssh-client procps tree util-linux bind-tools iproute2 iputils"
+if ! apk add --no-cache $BASE_PACKAGES; then
+  fail "Essential package installation failed. Check the package names and configured Alpine repositories; Palorder has not started yet."
 fi
+say "[3/4] Verifying Lua 5.4..."
+LUA_BIN=""
+for candidate in lua5.4 lua54 lua; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    version=$("$candidate" -v 2>&1 || :)
+    case "$version" in *"5.4"*) LUA_BIN=$candidate; break ;; esac
+  fi
+done
+[ -n "$LUA_BIN" ] || fail "Lua 5.4 is unavailable after installation. Try: apk search lua && apk add lua5.4"
+say "Lua interpreter verified: $LUA_BIN"
+say "[4/4] Downloading and installing Palorder runtime files..."
 if ! command -v dialog >/dev/null 2>&1; then fail "dialog package installed but the dialog command is missing."; fi
 LUA_BIN=""
 for candidate in lua5.4 lua54 lua; do
@@ -72,6 +84,7 @@ esac
 PALORDER_PROFILE
 fi
 say "Installation complete. Preferences and display name were preserved."
+say "Package command compatibility: apt, apt-get and pacman translate supported commands to apk."
 if [ "$MODE" = safe ]; then say "Safe mode kept existing scripts."; else say "Updated managed scripts; backups are in $BACKUP_DIR"; fi
 say "Automatic startup registered in /root/.profile."
 say "Disable automatic startup by setting PALORDER_NO_AUTO_START=1 before the hook."
