@@ -13,9 +13,20 @@ find_lua() {
 ensure_lua() {
   LUA_BIN=$(find_lua) && return 0
   printf '%s\n' "Lua 5.4 is missing. Attempting to install it from the configured Alpine repositories..."
-  if ! command -v apk >/dev/null 2>&1 || ! apk add --no-cache lua5.4; then
-    printf '%s\n' "Could not install Lua 5.4." "Check networking and /etc/apk/repositories, then run: apk update && apk search lua && apk add lua5.4" >&2
+  if ! command -v apk >/dev/null 2>&1; then
+    printf '%s\n' "apk is unavailable; this launcher expects Alpine/iSH." >&2
     return 1
+  fi
+  if ! apk add --no-cache lua5.4; then
+    printf '%s\n' "Package install failed; refreshing Alpine indexes and retrying..."
+    apk update || {
+      printf '%s\n' "Could not refresh Alpine indexes. Check network and /etc/apk/repositories." >&2
+      return 1
+    }
+    apk add --no-cache lua5.4 || {
+      printf '%s\n' "Could not install Lua 5.4. Check package availability with: apk search lua" >&2
+      return 1
+    }
   fi
   LUA_BIN=$(find_lua) || {
     printf '%s\n' "The package install completed, but no Lua 5.4 interpreter was found." "Check package availability with: apk info -L lua5.4" >&2
