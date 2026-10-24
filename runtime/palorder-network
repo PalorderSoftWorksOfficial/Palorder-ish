@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
-show_info() { dialog --title "$1" --msgbox "$2" 22 74; }
+show_info() {
+  title=$1; body=$2
+  term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
+  set -- $term_size
+  rows=${1:-24}; cols=${2:-80}
+  case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
+  [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 12 ] || rows=12
+  [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
+  dialog --title "$title" --msgbox "$body" "$rows" "$cols"
+}
 network_report() {
   out="Network diagnostics (iSH userland)\n\nDNS:\n$(cat /etc/resolv.conf 2>&1 || true)\n\nInterfaces:\n"
   if command -v ip >/dev/null 2>&1; then
