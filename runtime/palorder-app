@@ -2,6 +2,27 @@
 set -eu
 APP_ROOT="${HOME:-/root}/.local/share/palorder/apps"
 HOST="/root/bin/palorder-lua-host"
+find_lua() {
+  for candidate in lua5.4 lua54 lua; do
+    command -v "$candidate" >/dev/null 2>&1 || continue
+    version=$("$candidate" -v 2>&1 || :)
+    case "$version" in *"5.4"*) printf '%s\n' "$candidate"; return 0 ;; esac
+  done
+  return 1
+}
+ensure_lua() {
+  LUA_BIN=$(find_lua) && return 0
+  printf '%s\n' "Lua 5.4 is missing. Attempting to install it from the configured Alpine repositories..."
+  if ! command -v apk >/dev/null 2>&1 || ! apk add --no-cache lua5.4; then
+    printf '%s\n' "Could not install Lua 5.4." "Check networking and /etc/apk/repositories, then run: apk update && apk search lua && apk add lua5.4" >&2
+    return 1
+  fi
+  LUA_BIN=$(find_lua) || {
+    printf '%s\n' "The package install completed, but no Lua 5.4 interpreter was found." "Check package availability with: apk info -L lua5.4" >&2
+    return 1
+  }
+  printf 'Using Lua interpreter: %s\n' "$LUA_BIN"
+}
 usage() {
   cat <<'HELP'
 palorder-app — manage Lua applications
@@ -24,6 +45,12 @@ HELP
 }
 valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}$'; }
 run_ui() {
+  if ! ensure_lua; then
+    if command -v dialog >/dev/null 2>&1; then
+      dialog --title "Lua runtime unavailable" --msgbox "Palorder could not install Lua 5.4. Check network access and Alpine repositories, then run: apk update && apk add lua5.4" 10 68
+    fi
+    return 1
+  fi
   while :; do
     choice=$(dialog --clear --title "Lua Application Center" --menu "Run local Lua apps or create a new app." 15 64 5 \
       "list" "List installed apps" "run" "Run an app by ID" "create" "Create a Lua app" "help" "Command/API help" "exit" "Return to desktop" 3>&1 1>&2 2>&3) || return 0
@@ -64,8 +91,9 @@ case "$1" in
   run)
     [ "$#" -eq 2 ] || { echo "Usage: palorder-app run APP_ID" >&2; exit 2; }
     valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    command -v lua5.4 >/dev/null 2>&1 || { echo "Lua missing. Install: apk add lua5.4 dialog" >&2; exit 1; }
-    exec "$HOST" "$2"
+    ensure_lua || exit 1
+    [ -f "$HOST" ] || { echo "Lua host is missing: $HOST. Repair with: palorder-update" >&2; exit 1; }
+    exec "$LUA_BIN" "$HOST" "$2"
     ;;
   create)
     [ "$#" -eq 2 ] || { echo "Usage: palorder-app create APP_ID" >&2; exit 2; }
