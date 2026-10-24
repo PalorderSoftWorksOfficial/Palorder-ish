@@ -8,7 +8,7 @@ BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
 STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo install)
 BACKUP_DIR="$CONFIG_DIR/backups/$STAMP"
-FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control"
 say() { printf '%s\n' "Palorder iSH: $*"; }
 fail() { say "ERROR: $*" >&2; exit 1; }
 MODE=safe
