@@ -3,8 +3,10 @@ set -eu
 show_info() {
   title=$1; body=$2
   term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
-  set -- $term_size
-  rows=${1:-24}; cols=${2:-80}
+  case "$term_size" in
+    *" "*) rows=${term_size%% *}; cols=${term_size#* } ;;
+    *) rows=24; cols=80 ;;
+  esac
   case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
   [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 12 ] || rows=12
   [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
