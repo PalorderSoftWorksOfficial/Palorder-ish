@@ -67,7 +67,7 @@ api.ui={
 api.storage={
   get=function(key)
     if not declared.storage then error("permission denied: storage is not declared in manifest") end
-    if type(key)~="string" or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     local h=io.open(app_data.."/"..key,"rb")
     if not h then return nil end
     local value=h:read(65537); h:close()
@@ -76,7 +76,7 @@ api.storage={
   end,
   set=function(key,value)
     if not declared.storage then error("permission denied: storage is not declared in manifest") end
-    if type(key)~="string" or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     if type(value)~="string" or #value>65536 then error("storage value must be a string up to 64 KiB") end
     local tmp=app_data.."/."..key..".tmp"
     local h,err=io.open(tmp,"wb"); if not h then error(err) end
@@ -87,7 +87,7 @@ api.storage={
   end,
   delete=function(key)
     if not declared.storage then error("permission denied: storage is not declared in manifest") end
-    if type(key)~="string" or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     return os.remove(app_data.."/"..key)
   end
 }
