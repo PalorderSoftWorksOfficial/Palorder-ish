@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+po_info() { dialog --title "Palorder" --msgbox "$1" 10 58; }
+po_error() { dialog --title "Palorder • Error" --msgbox "$1" 10 58; }
+po_confirm() { dialog --title "Confirm action" --yesno "$1" 10 58; }
+po_input() { dialog --stdout --title "$1" --inputbox "$2" 10 58; }
