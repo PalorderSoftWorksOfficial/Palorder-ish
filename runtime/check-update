@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 BASE="https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main"
-CONFIG="\${HOME:-/root}/.config/palorder"
-BIN="\${HOME:-/root}/bin"
+CONFIG="${HOME:-/root}/.config/palorder"
+BIN="${HOME:-/root}/bin"
 usage() {
   cat <<'HELP'
 check-update — check whether Palorder runtime files changed upstream
@@ -21,7 +21,7 @@ Network access is required. The checker never executes downloaded code.
 HELP
 }
 mode=version
-case "\${1:-}" in
+case "${1:-}" in
   "") ;;
   --files) mode=files ;;
   --help|-h) usage; exit 0 ;;
