@@ -11,11 +11,12 @@ BACKUP_DIR="$CONFIG_DIR/backups/$STAMP"
 FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control"
 say() { printf '%s\n' "Palorder iSH: $*"; }
 fail() { say "ERROR: $*" >&2; exit 1; }
-MODE=safe
+MODE=update
 case "${1:-}" in
   "") ;;
   --update|--force) MODE=update ;;
-  --help|-h) printf '%s\n' "Usage: install.sh [--update|--force]" "Default: preserve existing runtime files." "--update: back up and replace managed runtime files."; exit 0 ;;
+  --safe) MODE=safe ;;
+  --help|-h) printf '%s\n' "Usage: install.sh [--safe|--update|--force]" "Default: back up and update managed runtime files." "--safe: install missing files only and preserve existing runtime scripts."; exit 0 ;;
   *) fail "Unknown option: $1. Use --help." ;;
 esac
 command -v curl >/dev/null 2>&1 || fail "curl is required. Install it with: apk add curl"
@@ -70,7 +71,7 @@ esac
 PALORDER_PROFILE
 fi
 say "Installation complete. Preferences and display name were preserved."
-if [ "$MODE" = safe ]; then say "Existing scripts were kept. Use --update to replace managed scripts."; else say "Updated managed scripts; backups are in $BACKUP_DIR"; fi
+if [ "$MODE" = safe ]; then say "Safe mode kept existing scripts."; else say "Updated managed scripts; backups are in $BACKUP_DIR"; fi
 say "Automatic startup registered in /root/.profile."
 say "Disable automatic startup by setting PALORDER_NO_AUTO_START=1 before the hook."
 say "Launch with: /root/bin/palorder"
