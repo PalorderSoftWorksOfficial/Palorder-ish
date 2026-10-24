@@ -26,10 +26,13 @@ say "[1/4] Refreshing Alpine package indexes..."
 if ! apk update; then fail "apk update failed. Check network access and /etc/apk/repositories."; fi
 say "[2/4] Installing required runtime packages..."
 CORE_PACKAGES="bash dialog lua5.4 curl ca-certificates coreutils findutils grep sed tar gzip git python3"
-# shellcheck disable=SC2086
-if ! apk add --no-cache $CORE_PACKAGES; then
-  fail "Required runtime packages could not be installed. Check network access and /etc/apk/repositories; Palorder has not started."
-fi
+for package in $CORE_PACKAGES; do
+  if apk info -e "$package" >/dev/null 2>&1; then
+    say "Already installed: $package"
+  elif ! apk add --no-cache "$package"; then
+    fail "Required package '$package' could not be installed. Check the error above and /etc/apk/repositories; Palorder has not started."
+  fi
+done
 say "Installing common command-line, archive, editor, networking and development tools..."
 OPTIONAL_GROUPS="wget gawk less file xz zip unzip diffutils patch bc|py3-pip jq nano vim tmux openssh-client procps tree|net-tools|iproute2|bind-tools iputils|build-base musl-dev linux-headers"
 old_ifs=$IFS
