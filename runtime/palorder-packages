@@ -53,7 +53,7 @@ while :; do
   [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 14 ] || rows=14
   [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
   menu_h=$((rows - 8))
-  choice=$(dialog --clear --title "Palorder Package Manager" --menu "Alpine apk • Current shell: $(sed -n 's/^SHELL=//p' "${HOME:-/root}/.config/palorder/settings" 2>/dev/null | head -n 1)" 20 70 10 \
+  choice=$(dialog --clear --title "Palorder Package Manager" --menu "Alpine apk • Current shell: $(sed -n 's/^SHELL=//p' "${HOME:-/root}/.config/palorder/settings" 2>/dev/null | head -n 1)" "$rows" "$cols" "$menu_h" \
     "update" "Refresh repository indexes" "upgrade" "Upgrade installed packages" \
     "search" "Search packages" "install" "Install package(s)" "remove" "Remove package(s)" \
     "list" "List installed packages" "info" "Inspect package details" \
