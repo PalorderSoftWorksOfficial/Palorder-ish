@@ -12,7 +12,7 @@ FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palor
 say() { printf '%s\n' "Palorder iSH: $*"; }
 fail() { say "ERROR: $*" >&2; exit 1; }
 MODE=update
-case "\${1:-}" in
+case "${1:-}" in
   "") ;;
   --update|--force) MODE=update ;;
   --safe) MODE=safe ;;
@@ -53,7 +53,7 @@ if ! grep -Fq '# BEGIN PALORDER AUTO START' "$PROFILE"; then
 # BEGIN PALORDER AUTO START
 case "$-" in
   *i*)
-    if [ "\${PALORDER_NO_AUTO_START:-0}" != 1 ] && [ -x /root/bin/palorder ]; then exec /root/bin/palorder; fi
+    if [ "${PALORDER_NO_AUTO_START:-0}" != 1 ] && [ -x /root/bin/palorder ]; then exec /root/bin/palorder; fi
     ;;
 esac
 # END PALORDER AUTO START
