@@ -35,8 +35,10 @@ mkdir -p "$CONFIG_DIR"
 if [ ! -f "$CONFIG_DIR/setup-complete" ] && [ -x "$BIN_DIR/palorder-setup" ]; then "$BIN_DIR/palorder-setup"; : > "$CONFIG_DIR/setup-complete"; fi
 command -v dialog >/dev/null 2>&1 || { printf '%s\n' "Palorder requires dialog. Install it with: apk add dialog"; exec /bin/bash; }
 term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
-set -- $term_size
-rows=${1:-24}; cols=${2:-80}
+case "$term_size" in
+  *" "*) rows=${term_size%% *}; cols=${term_size#* } ;;
+  *) rows=24; cols=80 ;;
+esac
 case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
 [ "$rows" -le 24 ] || rows=24
 [ "$rows" -ge 14 ] || rows=14
