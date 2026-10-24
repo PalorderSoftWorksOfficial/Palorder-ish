@@ -1,0 +1,45 @@
+#!/bin/sh
+set -eu
+ROOT="${HOME:-/root}/.local/share/palorder/dev"
+usage() {
+  cat <<'HELP'
+palorder-dev — safe device-path helpers for the iSH userland
+
+Usage:
+  palorder-dev setup          Create best-effort /dev/palorder symlinks
+  palorder-dev path            Print the portable Palorder device directory
+  palorder-dev urandom [N]     Emit N random bytes (default: 32)
+  palorder-dev --help          Show help
+
+On iSH, /dev is managed by the app's Linux compatibility layer. Creating
+/dev/palorder may be denied; the persistent fallback is ~/.local/share/palorder/dev.
+These paths are symlinks to existing kernel-provided devices, not new devices.
+N must be between 1 and 1048576 bytes.
+HELP
+}
+case "${1:-path}" in
+  --help|-h) usage; exit 0 ;;
+  path) mkdir -p "$ROOT"; printf '%s\n' "$ROOT"; exit 0 ;;
+  setup)
+    mkdir -p "$ROOT"
+    for dev in urandom random null zero; do
+      [ -e "/dev/$dev" ] && ln -sf "/dev/$dev" "$ROOT/$dev"
+    done
+    if mkdir -p /dev/palorder 2>/dev/null; then
+      for dev in urandom random null zero; do
+        [ ! -e "/dev/$dev" ] || ln -sf "/dev/$dev" "/dev/palorder/$dev" 2>/dev/null || :
+      done
+      printf '%s\n' 'Created best-effort /dev/palorder symlinks.'
+    else
+      printf '%s\n' 'Cannot write /dev/palorder in this iSH environment; using the portable path:' "$ROOT"
+    fi
+    exit 0 ;;
+  urandom)
+    count=${2:-32}
+    case "$count" in ''|*[!0-9]*) echo "Byte count must be a positive integer." >&2; exit 2 ;; esac
+    [ "$count" -ge 1 ] && [ "$count" -le 1048576 ] || { echo "Byte count must be 1..1048576." >&2; exit 2; }
+    [ -r /dev/urandom ] || { echo "/dev/urandom is unavailable in this environment." >&2; exit 1; }
+    exec od -An -N "$count" -tx1 /dev/urandom
+    ;;
+  *) echo "Unknown command: $1" >&2; usage >&2; exit 2 ;;
+esac
