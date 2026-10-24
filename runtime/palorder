@@ -3,6 +3,11 @@ set -eu
 BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
 [ -x "$BIN_DIR/palorder-boot" ] && "$BIN_DIR/palorder-boot"
+mkdir -p "$CONFIG_DIR"
+if [ ! -f "$CONFIG_DIR/setup-complete" ] && [ -x "$BIN_DIR/palorder-setup" ]; then
+  "$BIN_DIR/palorder-setup"
+  : > "$CONFIG_DIR/setup-complete"
+fi
 command -v dialog >/dev/null 2>&1 || { printf '%s\n' "Palorder requires dialog. Install it with: apk add dialog"; exec sh; }
 while :; do
   theme="midnight"
