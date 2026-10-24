@@ -10,11 +10,11 @@ Open iSH and run:
 curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh | sh
 ```
 
-The default installer is safe to rerun: it installs missing runtime files and leaves existing runtime scripts untouched. It preserves preferences and the display name. It downloads only an explicit list of files from `runtime/`, never development files.
+The installer backs up and updates managed runtime scripts by default, so fixes and UI updates actually reach existing installations. It preserves preferences and the display name. It downloads only an explicit list of files from `runtime/`, never development files. Use `--safe` to install missing files only and leave existing scripts untouched.
 
 ### Update or repair managed scripts
 
-To intentionally replace managed runtime scripts, download the installer and pass `--update`:
+To explicitly update managed runtime scripts, download the installer and pass `--update` (the default):
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh -o /tmp/palorder-install.sh
