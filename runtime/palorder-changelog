@@ -3,7 +3,7 @@ cat <<'CHANGELOG'
 PALORDER iSH — RELEASE NOTES
 ============================
 
-0.5.0 — device tools and package workflow
+0.5.0 — device tools and package workflow (current)
 - Add a package manager workflow with installed-package listing and package details.
 - Add configurable default shell; Bash is the default, with optional Zsh and POSIX shells.
 - Add phone/network diagnostics for interfaces, routes, DNS, HTTPS connectivity and device information exposed by iSH.
