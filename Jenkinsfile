@@ -51,7 +51,7 @@ pipeline {
                     grep -Fq 'palorder-lua-host' install.sh
                     grep -Fq 'check-update' install.sh
                     grep -Fq 'lua5.4' install.sh
-                    grep -Fq 'BASE_PACKAGES=' install.sh
+                    grep -Fq 'CORE_PACKAGES=' install.sh
                     grep -Fq 'pkg-compat apt' runtime/apt
                     grep -Fq 'pkg-compat pacman' runtime/pacman
                     grep -Fq 'apk update' install.sh
