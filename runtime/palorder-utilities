@@ -1,21 +1,28 @@
 #!/bin/sh
 set -eu
 while :; do
-  choice=$(dialog --clear --title "Utilities" --menu "Inspect the local iSH environment." 16 62 5 \
-    "system" "System information" "storage" "Disk and directory usage" "network" "Network diagnostics" "env" "Show environment paths" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+  choice=$(dialog --clear --title "Utilities & Device Settings" --menu "Inspect the iSH environment and network capabilities." 18 68 7 \
+    "system" "System and device information" "storage" "Disk and directory usage" \
+    "network" "Network diagnostics" "phone" "Phone settings and capability report" \
+    "env" "Environment and runtime paths" "shell" "Default shell selector" "history" "Changelog and commit registry" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     system)
-      result="Hostname: $(hostname 2>/dev/null || echo unknown)\nArchitecture: $(uname -m 2>/dev/null || echo unknown)\nKernel: $(uname -sr 2>/dev/null || echo unknown)\nUptime: $(uptime 2>/dev/null || echo unavailable)\n\nThis is iSH's app-managed environment, not the iOS host OS."
-      dialog --title "System information" --msgbox "$result" 14 62 ;;
+      model="Not exposed to iSH"
+      for candidate in /sys/firmware/devicetree/base/model /proc/device-tree/model; do
+        if [ -r "$candidate" ]; then model=$(tr -d '\000' < "$candidate"); break; fi
+      done
+      result="Device model: $model\nArchitecture: $(uname -m 2>/dev/null || echo unknown)\nKernel interface: $(uname -sr 2>/dev/null || echo unknown)\nHostname: $(hostname 2>/dev/null || echo unknown)\nUptime: $(uptime 2>/dev/null || echo unavailable)\n\nThis reports iSH's Linux-like environment, not all iOS hardware details."
+      dialog --title "System information" --msgbox "$result" 16 66 ;;
     storage)
       result="$(df -h 2>&1)\n\n/root usage:\n$(du -sh /root 2>&1 || true)"
-      dialog --title "Storage" --msgbox "$result" 20 70 ;;
-    network)
-      result="DNS configuration:\n$(cat /etc/resolv.conf 2>&1)\n\nRoutes:\n$(ip route 2>&1 || echo 'ip command unavailable')\n\nTest: curl -I https://github.com"
-      dialog --title "Network diagnostics" --msgbox "$result" 20 70 ;;
+      dialog --title "Storage" --msgbox "$result" 20 72 ;;
+    network) /root/bin/palorder-network network | { tmp="/tmp/palorder-network-$$"; cat > "$tmp"; dialog --title "Network diagnostics" --textbox "$tmp" 22 76; rm -f "$tmp"; } ;;
+    phone) /root/bin/palorder-network ;;
     env)
-      result="HOME=${HOME:-unset}\nPATH=$PATH\nRuntime scripts: /root/bin\nSettings: /root/.config/palorder/settings\nIdentity: /root/.config/palorder/identity"
-      dialog --title "Environment paths" --msgbox "$result" 12 62 ;;
+      result="HOME=${HOME:-unset}\nPATH=$PATH\nRuntime scripts: /root/bin\nSettings: /root/.config/palorder/settings\nIdentity: /root/.config/palorder/identity\nDefault shell: $(sed -n 's/^SHELL=//p' /root/.config/palorder/settings 2>/dev/null | head -n 1)\nDevice helper path: $(/root/bin/palorder-dev path 2>/dev/null || echo unavailable)"
+      dialog --title "Environment paths" --msgbox "$result" 14 68 ;;
+    shell) /root/bin/palorder-shell ;;
+    history) /root/bin/palorder-history ;;
     back) exit 0 ;;
   esac
 done
