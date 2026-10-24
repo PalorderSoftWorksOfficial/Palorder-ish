@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+CONFIG_DIR="/root/.config/palorder"
+workspace=$(sed -n 's/^WORKSPACE=//p' "$CONFIG_DIR/settings" 2>/dev/null | head -n 1)
+[ -n "$workspace" ] || workspace="${HOME:-/root}/workspace"
+mkdir -p "$workspace"
+clear 2>/dev/null || :
+printf '%s\n' 'PALORDER TERMINAL SESSION' '-------------------------' "Workspace: $workspace" 'Type exit to return to the boot menu.'
+cd "$workspace"
+exec sh
