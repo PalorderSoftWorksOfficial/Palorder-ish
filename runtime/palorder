@@ -7,20 +7,20 @@ while :; do
   theme="midnight"
   [ ! -f "$CONFIG_DIR/settings" ] || theme=$(sed -n 's/^THEME=//p' "$CONFIG_DIR/settings" | head -n 1)
   case "$theme" in
-    violet) accent="\\Zb\\Z5" ;;
-    amber) accent="\\Zb\\Z3" ;;
-    emerald) accent="\\Zb\\Z2" ;;
-    mono) accent="\\Zb\\Z7" ;;
-    *) accent="\\Zb\\Z6" ;;
+    violet) accent="\Zb\Z5" ;;
+    amber) accent="\Zb\Z3" ;;
+    emerald) accent="\Zb\Z2" ;;
+    mono) accent="\Zb\Z7" ;;
+    *) accent="\Zb\Z6" ;;
   esac
-  choice=$(dialog --colors --clear --backtitle "${accent}PALORDER • iSH ENVIRONMENT\\Zn" --title "PALORDER iSH" --menu "\\n  Alpine tools, organized for iPhone and iPad.\\n\\n  Choose an action." 19 64 9 \\
-    "settings" "Appearance and preferences" \\
-    "setup" "Setup and environment checks" \\
-    "packages" "Package manager" \\
-    "utilities" "System and network utilities" \\
-    "task" "Run a command" \\
-    "update" "Update Palorder" \\
-    "about" "About this environment" \\
+  choice=$(dialog --colors --clear --backtitle "${accent}PALORDER • iSH ENVIRONMENT\Zn" --title "PALORDER iSH" --menu "\n  Alpine tools, organized for iPhone and iPad.\n\n  Choose an action." 19 64 9 \
+    "settings" "Appearance and preferences" \
+    "setup" "Setup and environment checks" \
+    "packages" "Package manager" \
+    "utilities" "System and network utilities" \
+    "task" "Run a command" \
+    "update" "Update Palorder" \
+    "about" "About this environment" \
     "exit" "Exit menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     settings) "$BIN_DIR/palorder-settings" ;;
@@ -29,7 +29,7 @@ while :; do
     utilities) "$BIN_DIR/palorder-utilities" ;;
     task) "$BIN_DIR/palorder-run-task" ;;
     update) "$BIN_DIR/palorder-update" ;;
-    about) dialog --title "About Palorder iSH" --msgbox "Palorder iSH is a customizable terminal UI for iSH and Alpine Linux.\\n\\nIt is not a full Linux VM or graphical desktop." 10 60 ;;
+    about) dialog --title "About Palorder iSH" --msgbox "Palorder iSH is a customizable terminal UI for iSH and Alpine Linux.\n\nIt is not a full Linux VM or graphical desktop." 10 60 ;;
     exit) clear; exit 0 ;;
   esac
 done
