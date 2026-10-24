@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+while :; do
+  choice=$(dialog --clear --title "Utilities" --menu "Inspect the local iSH environment." 16 62 5 \
+    "system" "System information" "storage" "Disk and directory usage" "network" "Network diagnostics" "env" "Show environment paths" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    system)
+      result="Hostname: $(hostname 2>/dev/null || echo unknown)\nArchitecture: $(uname -m 2>/dev/null || echo unknown)\nKernel: $(uname -sr 2>/dev/null || echo unknown)\nUptime: $(uptime 2>/dev/null || echo unavailable)\n\nThis is iSH's app-managed environment, not the iOS host OS."
+      dialog --title "System information" --msgbox "$result" 14 62 ;;
+    storage)
+      result="$(df -h 2>&1)\n\n/root usage:\n$(du -sh /root 2>&1 || true)"
+      dialog --title "Storage" --msgbox "$result" 20 70 ;;
+    network)
+      result="DNS configuration:\n$(cat /etc/resolv.conf 2>&1)\n\nRoutes:\n$(ip route 2>&1 || echo 'ip command unavailable')\n\nTest: curl -I https://github.com"
+      dialog --title "Network diagnostics" --msgbox "$result" 20 70 ;;
+    env)
+      result="HOME=${HOME:-unset}\nPATH=$PATH\nRuntime scripts: /root/bin\nSettings: /root/.config/palorder/settings\nIdentity: /root/.config/palorder/identity"
+      dialog --title "Environment paths" --msgbox "$result" 12 62 ;;
+    back) exit 0 ;;
+  esac
+done
