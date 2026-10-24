@@ -1,0 +1,139 @@
+#!/usr/bin/env lua5.4
+local app_id = arg[1]
+local app_root = "/root/.local/share/palorder/apps"
+local data_root = "/root/.local/share/palorder/data"
+local function fail(msg)
+  io.stderr:write("palorder-app: ", tostring(msg), "\n")
+  os.exit(2)
+end
+local function valid_id(s)
+  return type(s)=="string" and s:match("^[a-z][a-z0-9_-]*$") and #s<=48
+end
+if not valid_id(app_id) then fail("invalid app id") end
+local source_path = app_root .. "/" .. app_id .. "/main.lua"
+local f = io.open(source_path, "rb")
+if not f then fail("app not found: " .. app_id .. " (expected " .. source_path .. ")") end
+local source = f:read("*a"); f:close()
+if #source > 262144 then fail("app source exceeds 256 KiB limit") end
+local manifest, declared = {}, {}
+local mf = io.open(app_root .. "/" .. app_id .. "/manifest", "r")
+if mf then
+  for line in mf:lines() do
+    local k,v = line:match("^([a-z_]+)=(.*)$")
+    if k then manifest[k]=v end
+  end
+  mf:close()
+end
+for p in (manifest.permissions or ""):gmatch("[^,]+") do declared[p]=true end
+local function shell_quote(s) return "'" .. tostring(s):gsub("'", "'\\''") .. "'" end
+local app_data = data_root .. "/" .. app_id
+os.execute("mkdir -p " .. shell_quote(app_data))
+local function dialog(args)
+  local cmd={"dialog"}
+  for _,v in ipairs(args) do cmd[#cmd+1]=shell_quote(v) end
+  local p=io.popen(table.concat(cmd," ") .. " 2>/dev/tty","r")
+  if not p then return nil end
+  local out=p:read("*a")
+  local ok=p:close()
+  if ok then return out end
+  return nil
+end
+local permission_root = "/root/.config/palorder/permissions"
+os.execute("mkdir -p " .. shell_quote(permission_root))
+local granted = {}
+if declared.storage then
+  local permission_path = permission_root .. "/" .. app_id .. ".storage"
+  local pf = io.open(permission_path, "r")
+  local status = pf and pf:read("*l") or nil
+  if pf then pf:close() end
+  if status == "granted" then
+    granted.storage = true
+  elseif status == nil then
+    local approved = dialog({"--title", "App permission", "--yesno", (manifest.name or app_id) .. " requests permission to save data in its private Palorder app-storage folder. Grant storage access?", "12", "68"})
+    local value = approved ~= nil and "granted\n" or "denied\n"
+    local wh = io.open(permission_path, "w")
+    if wh then wh:write(value); wh:close() end
+    granted.storage = approved ~= nil
+  end
+end
+local api={version="1.0",app={id=app_id,name=manifest.name or app_id,version=manifest.version or "0.1.0"}}
+api.ui={
+  message=function(title,body)
+    assert(type(title)=="string" and type(body)=="string","message expects strings")
+    dialog({"--title",title,"--msgbox",body,"10","64"})
+  end,
+  input=function(title,prompt,initial)
+    local out=dialog({"--stdout","--title",title,"--inputbox",prompt,"10","64",initial or ""})
+    if not out then return nil end
+    return out:gsub("\n$","")
+  end,
+  confirm=function(title,prompt)
+    return dialog({"--title",title,"--yesno",prompt,"10","64"}) ~= nil
+  end,
+  menu=function(title,prompt,entries)
+    assert(type(entries)=="table","menu expects an array of {id,label}")
+    local args={"--stdout","--title",title,"--menu",prompt,"20","70","12"}
+    for _,entry in ipairs(entries) do
+      assert(type(entry)=="table" and type(entry.id)=="string" and type(entry.label)=="string","invalid menu entry")
+      args[#args+1]=entry.id; args[#args+1]=entry.label
+    end
+    local out=dialog(args)
+    if not out then return nil end
+    return out:gsub("\n$","")
+  end
+}
+api.storage={
+  get=function(key)
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    local h=io.open(app_data.."/"..key,"rb")
+    if not h then return nil end
+    local value=h:read(65537); h:close()
+    if #value>65536 then error("stored value exceeds 64 KiB") end
+    return value
+  end,
+  set=function(key,value)
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    if type(value)~="string" or #value>65536 then error("storage value must be a string up to 64 KiB") end
+    local tmp=app_data.."/."..key..".tmp"
+    local h,err=io.open(tmp,"wb"); if not h then error(err) end
+    h:write(value); h:close()
+    local ok,rename_err=os.rename(tmp,app_data.."/"..key)
+    if not ok then os.remove(tmp); error(rename_err) end
+    return true
+  end,
+  delete=function(key)
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
+    if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
+    return os.remove(app_data.."/"..key)
+  end
+}
+api.system={info=function()
+  local p=io.popen("uname -srm 2>/dev/null","r")
+  local s=p and p:read("*a") or "unknown"
+  if p then p:close() end
+  return s:gsub("%s+$","")
+end}
+local safe={
+  assert=assert,error=error,ipairs=ipairs,next=next,pairs=pairs,pcall=pcall,
+  select=select,tonumber=tonumber,tostring=tostring,type=type,xpcall=xpcall,
+  math=math,string=string,table=table,utf8=utf8,api=api,
+  print=function(...)
+    local out={}
+    for i=1,select("#",...) do out[i]=tostring(select(i,...)) end
+    io.write(table.concat(out,"\t"),"\n")
+  end
+}
+local env=setmetatable({}, {__index=safe,__newindex=function(t,k,v) rawset(t,k,v) end,__metatable=false})
+local chunk,err=load(source,"@"..source_path,"t",env)
+if not chunk then fail(err) end
+local instructions=0
+debug.sethook(function() instructions=instructions+1; if instructions>100 then io.stderr:write("palorder-app: instruction budget exceeded\n"); os.exit(124) end end,"",10000)
+local ok,result=xpcall(chunk,debug.traceback)
+debug.sethook()
+if not ok then fail(result) end
+if result~=nil then print(result) end

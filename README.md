@@ -1,76 +1,77 @@
 # Palorder iSH
 
-A terminal-first, dialog-powered Alpine environment for [iSH on iOS](https://github.com/ish-app/ish). It provides a GRUB-inspired keyboard-controlled boot menu, splash screen, multi-step setup wizard, Control Center, terminal session, package shortcuts, utilities, command runner, and updater. It is not a full graphical Linux desktop.
+A terminal-first, dialog-powered Alpine environment for [iSH on iOS](https://github.com/ish-app/ish). It provides a GRUB-inspired keyboard-controlled boot menu, splash screen, setup wizard, Control Center, terminal session, Lua application runtime, developer tools, package shortcuts, diagnostics and updater. It is not a full graphical Linux desktop.
 
 ## Install
 
 Open iSH and run:
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh | sh
-```
+    curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh | sh
 
-The installer backs up and updates managed runtime scripts by default, so fixes and UI updates actually reach existing installations. It preserves preferences and the display name. It downloads only an explicit list of files from `runtime/`, never development files. Use `--safe` to install missing files only and leave existing scripts untouched.
+The installer backs up and updates managed runtime scripts by default, preserves preferences and display name, and downloads only an explicit allowlist from runtime/. Use --safe to install missing files only.
 
-### Update or repair managed scripts
+## Updates
 
-To explicitly update managed runtime scripts, download the installer and pass `--update` (the default):
+    check-update
+    check-update --files
+    palorder-update
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh -o /tmp/palorder-install.sh
-sh /tmp/palorder-install.sh --update
-```
+check-update compares version metadata by default; --files compares each managed script without installing or executing downloaded files. palorder-update stages the full runtime, backs up existing files, then installs the staged versions. Review backups if you have local script modifications.
 
-This backs up existing managed scripts before replacement. The in-app updater also backs up scripts first. If you modified scripts under `/root/bin`, review backups before updating.
+## Lua applications
+
+The Lua 5.4 runtime provides a small capability-oriented API for interactive apps.
+
+    palorder-app --help
+    palorder-app create hello
+    palorder-app run hello
+    palorder-app list
+    palorder-app info hello
+
+Apps are stored in ~/.local/share/palorder/apps/APP_ID/ and app data in ~/.local/share/palorder/data/APP_ID/. See docs/LUA_APP_API.md for the API and security model. The sandbox removes direct os/io/debug/package access and has no public arbitrary-shell API. It is not an Android-grade security boundary: apps share the same iSH/Alpine account, there is no per-app UID/SELinux isolation, and CPU quotas are not enforced. Do not run untrusted apps or store secrets in app data.
+
+## Developer tools
+
+Open Control Center → Install developer toolchain to install Lua 5.4, Git, Python/pip, build tools, headers, curl, jq, nano, vim, tmux, OpenSSH client and CA certificates. Package availability depends on the Alpine repositories enabled in your iSH environment.
 
 ## Customize
 
-Run `palorder`, then open **Appearance and preferences**.
+Run palorder, then open Appearance and preferences.
 
-- **Theme:** Midnight/Cyan, Violet, Amber, Emerald, or Monochrome
-- **Boot banner:** show or hide the ASCII banner
-- **Display name:** change the startup greeting
-- **Reset preferences:** reset only theme and banner; display name, packages, and scripts remain unchanged
+- Theme: Midnight/Cyan, Violet, Amber, Emerald, or Monochrome
+- Boot banner: show or hide the ASCII banner
+- Display name: change the startup greeting
+- Reset preferences: reset only theme and banner
 
-Preferences live in `/root/.config/palorder/settings`; the display name is in `/root/.config/palorder/identity`. Installation and update preserve these files.
+Preferences are in /root/.config/palorder/settings; display name is in /root/.config/palorder/identity. Updates preserve these files.
 
-## Requirements
+## Requirements and limitations
 
 - iSH on iPhone or iPad
-- Alpine userland with working `apk`
+- Alpine userland with working apk
 - Network access
-- `dialog` for menus; the installer attempts to install it
+- dialog and Lua 5.4 (the installer attempts to install both)
 
-iSH is an emulated, app-sandboxed environment, not a full Linux VM. Package compatibility, performance, networking, and background execution differ from desktop Alpine. This project does not install XFCE or claim to provide a graphical desktop.
-
-## Features
-
-- Terminal welcome screen and main menu
-- Appearance and preferences menu
-- Setup checks and optional developer tools
-- Package search, install, remove, and upgrade shortcuts
-- System, storage, and network diagnostics
-- Confirm-before-run command runner
-- Staged self-updater with backups
-- Safe default reinstall
+iSH is an emulated, app-sandboxed environment, not a full Linux VM. Package compatibility, performance, networking, and background execution differ from desktop Alpine. Palorder does not install XFCE or claim to provide a graphical desktop.
 
 ## Paths
 
-- Runtime scripts: `/root/bin`
-- Preferences: `/root/.config/palorder/settings`
-- Display name: `/root/.config/palorder/identity`
-- Backups: `/root/.config/palorder/backups`
+- Runtime scripts: /root/bin
+- Preferences: /root/.config/palorder
+- Lua apps: ~/.local/share/palorder/apps
+- App data: ~/.local/share/palorder/data
+- Backups: /root/.config/palorder/backups
 
 ## Jenkins CI
 
-The repository uses `Jenkinsfile`, not GitHub Actions. In Jenkins, create a **Pipeline** job, select **Pipeline script from SCM**, choose **Git**, enter repository URL `https://github.com/PalorderSoftWorksOfficial/Palorder-ish.git`, set branch to `*/main`, and set **Script Path** to `Jenkinsfile`. Save and click **Build Now**. The pipeline checks shell syntax, validates the installer allowlist, and runs ShellCheck if installed on the Jenkins agent.
+The repository uses Jenkinsfile, not GitHub Actions. Configure a Pipeline job using Pipeline script from SCM, Git repository https://github.com/PalorderSoftWorksOfficial/Palorder-ish.git, branch */main and Script Path Jenkinsfile. CI checks shell syntax, optionally checks Lua syntax and ShellCheck, and validates the installer allowlist.
 
 ## Security
 
-Do not run commands from untrusted issues or pull requests. Never store passwords, API tokens, or private keys in settings. The command runner asks for confirmation before execution. Software is provided without warranty.
+Never store passwords, API tokens or private keys in settings or app storage. Do not run code from untrusted issues or pull requests. The command runner executes commands as the current iSH user after confirmation. Software is provided without warranty.
 
-See [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [SECURITY.md](SECURITY.md). These development files are not part of the runtime payload.
+See AGENTS.md, CONTRIBUTING.md, SECURITY.md and docs/LUA_APP_API.md.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See LICENSE.
