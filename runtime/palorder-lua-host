@@ -159,12 +159,12 @@ api.storage={
     return os.remove(app_data.."/"..key)
   end
 }
-api.system={info=function()
+api.system.info=function()
   local p=io.popen("uname -srm 2>/dev/null","r")
   local s=p and p:read("*a") or "unknown"
   if p then p:close() end
   return s:gsub("%s+$","")
-end}
+end
 local safe={
   assert=assert,error=error,ipairs=ipairs,next=next,pairs=pairs,pcall=pcall,
   select=select,tonumber=tonumber,tostring=tostring,type=type,xpcall=xpcall,
