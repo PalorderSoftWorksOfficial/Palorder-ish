@@ -14,20 +14,27 @@ shift
 
 case "$frontend:$command_name" in
   apt:update|apt-get:update)
-    exec apk update "$@"
+    exec apk update
     ;;
   apt:upgrade|apt:full-upgrade|apt:dist-upgrade|apt-get:upgrade|apt-get:dist-upgrade)
-    exec apk upgrade "$@"
+    exec apk upgrade
     ;;
   apt:install|apt-get:install)
-    while [ "$#" -gt 0 ]; do
-      case "$1" in -y|--yes|--no-install-recommends|--no-install-suggests) shift ;; *) break ;; esac
+    packages=""
+    for item do
+      case "$item" in -y|--yes|--no-install-recommends|--no-install-suggests) ;; *) packages="$packages $item" ;; esac
     done
+    # Package names cannot contain spaces; this removes Debian-only flags wherever they appear.
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
     [ "$#" -gt 0 ] || { echo "Usage: $frontend install PACKAGE..." >&2; exit 2; }
     exec apk add --no-cache "$@"
     ;;
   apt:remove|apt:purge|apt-get:remove|apt-get:purge)
-    while [ "$#" -gt 0 ]; do case "$1" in -y|--yes) shift ;; *) break ;; esac; done
+    packages=""
+    for item do case "$item" in -y|--yes) ;; *) packages="$packages $item" ;; esac; done
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
     [ "$#" -gt 0 ] || { echo "Usage: $frontend $command_name PACKAGE..." >&2; exit 2; }
     exec apk del "$@"
     ;;
@@ -61,7 +68,10 @@ case "$frontend:$command_name" in
     exec apk upgrade
     ;;
   pacman:-S|pacman:-Sy*)
-    while [ "$#" -gt 0 ]; do case "$1" in --needed|--noconfirm) shift ;; *) break ;; esac; done
+    packages=""
+    for item do case "$item" in --needed|--noconfirm|--overwrite\=*) ;; *) packages="$packages $item" ;; esac; done
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
     [ "$#" -gt 0 ] || { echo "Usage: pacman -S PACKAGE..." >&2; exit 2; }
     exec apk add --no-cache "$@"
     ;;
