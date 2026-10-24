@@ -1,0 +1,69 @@
+#!/bin/sh
+set -eu
+APP_ROOT="\${HOME:-/root}/.local/share/palorder/apps"
+HOST="/root/bin/palorder-lua-host"
+usage() {
+  cat <<'HELP'
+palorder-app — manage Lua applications
+
+Usage:
+  palorder-app list
+  palorder-app run APP_ID
+  palorder-app create APP_ID
+  palorder-app info APP_ID
+  palorder-app --help
+
+Apps live in ~/.local/share/palorder/apps/APP_ID/{manifest,main.lua}.
+IDs match ^[a-z][a-z0-9_-]{0,47}$. New apps are local files; review code
+before running it. The runtime removes direct os/io/debug/package access
+and arbitrary shell execution. This is not a separate OS-user sandbox.
+HELP
+}
+valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}$'; }
+case "\${1:-}" in
+  --help|-h|help|"") usage; exit 0 ;;
+  list)
+    mkdir -p "$APP_ROOT"; found=0
+    for file in "$APP_ROOT"/*/main.lua; do
+      [ -f "$file" ] || continue; found=1
+      printf '%s\n' "\${file%/main.lua}" | sed "s|^$APP_ROOT/||"
+    done
+    [ "$found" -eq 1 ] || echo "No apps installed. Create one: palorder-app create hello"
+    ;;
+  run)
+    [ "$#" -eq 2 ] || { echo "Usage: palorder-app run APP_ID" >&2; exit 2; }
+    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
+    command -v lua5.4 >/dev/null 2>&1 || { echo "Lua missing. Install: apk add lua5.4 dialog" >&2; exit 1; }
+    exec "$HOST" "$2"
+    ;;
+  create)
+    [ "$#" -eq 2 ] || { echo "Usage: palorder-app create APP_ID" >&2; exit 2; }
+    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
+    dir="$APP_ROOT/$2"
+    [ ! -e "$dir" ] || { echo "App already exists: $dir" >&2; exit 1; }
+    mkdir -p "$dir"
+    cat > "$dir/manifest" <<EOF
+name=$2
+version=0.1.0
+permissions=storage
+EOF
+    cat > "$dir/main.lua" <<'LUA'
+api.ui.message("Hello from Lua", "This app runs inside Palorder's restricted Lua environment.")
+local previous = api.storage.get("launches") or "0"
+local count = (tonumber(previous) or 0) + 1
+api.storage.set("launches", tostring(count))
+api.ui.message(api.app.name, "Launch count: " .. count .. "\nRuntime API: " .. api.version)
+LUA
+    chmod 600 "$dir/manifest" "$dir/main.lua"
+    printf 'Created %s\nRun: palorder-app run %s\nEdit: %s/main.lua\n' "$dir" "$2" "$dir"
+    ;;
+  info)
+    [ "$#" -eq 2 ] || { echo "Usage: palorder-app info APP_ID" >&2; exit 2; }
+    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
+    dir="$APP_ROOT/$2"; [ -f "$dir/main.lua" ] || { echo "App not found: $2" >&2; exit 1; }
+    printf 'App: %s\nDirectory: %s\n\nManifest:\n' "$2" "$dir"
+    cat "$dir/manifest" 2>/dev/null || :
+    printf '\nSource: %s/main.lua\n' "$dir"
+    ;;
+  *) echo "Unknown subcommand: $1" >&2; usage >&2; exit 2 ;;
+esac
