@@ -1,0 +1,36 @@
+#!/bin/sh
+set -eu
+BIN_DIR="/root/bin"
+while :; do
+  choice=$(dialog --clear --title "Palorder Control Center" --menu "System tools and workspace controls." 19 68 8 \
+    "terminal" "Open terminal session" \
+    "packages" "Package manager" \
+    "files" "Browse files (if a file manager exists)" \
+    "editor" "Open text editor" \
+    "monitor" "System / storage monitor" \
+    "network" "Network diagnostics" \
+    "settings" "Appearance and preferences" \
+    "setup" "Setup wizard" \
+    "back" "Return to boot menu" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    terminal) "$BIN_DIR/palorder-terminal" ;;
+    packages) "$BIN_DIR/palorder-packages" ;;
+    files)
+      if command -v mc >/dev/null 2>&1; then mc
+      elif command -v ranger >/dev/null 2>&1; then ranger
+      else dialog --title "File browser unavailable" --msgbox "Install mc or ranger from the package manager to enable interactive file browsing. The workspace is /root/workspace by default." 9 62
+      fi ;;
+    editor)
+      if command -v vim >/dev/null 2>&1; then vim
+      elif command -v nano >/dev/null 2>&1; then nano
+      else dialog --title "Editor unavailable" --msgbox "Install nano or vim with apk first." 7 44
+      fi ;;
+    monitor)
+      info="System:\n$(uname -a 2>&1)\n\nStorage:\n$(df -h 2>&1)\n\nMemory (when available):\n$(free -h 2>&1 || echo 'free is not installed')"
+      dialog --title "System monitor" --msgbox "$info" 22 72 ;;
+    network) "$BIN_DIR/palorder-utilities" ;;
+    settings) "$BIN_DIR/palorder-settings" ;;
+    setup) "$BIN_DIR/palorder-setup" ;;
+    back) exit 0 ;;
+  esac
+done
