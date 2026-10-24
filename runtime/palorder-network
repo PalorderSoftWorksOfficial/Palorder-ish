@@ -45,6 +45,15 @@ case "${1:-}" in
   phone) phone_report; exit 0 ;;
 esac
 while :; do
+  term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
+  case "$term_size" in
+    *" "*) rows=${term_size%% *}; cols=${term_size#* } ;;
+    *) rows=24; cols=80 ;;
+  esac
+  case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
+  [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 14 ] || rows=14
+  [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
+  menu_h=$((rows - 8))
   choice=$(dialog --clear --title "Phone & Network Settings" --menu "iOS-compatible information and network diagnostics. System radio controls are not available to iSH." 18 72 5 \
     "phone" "Device model and available system information" \
     "wifi" "Wi-Fi diagnostics (not a Wi-Fi toggle)" \
