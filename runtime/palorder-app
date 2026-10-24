@@ -12,6 +12,8 @@ Usage:
   palorder-app run APP_ID      Run an installed app
   palorder-app create APP_ID   Create a starter app and manifest
   palorder-app info APP_ID     Show app metadata and paths
+  palorder-app permissions APP_ID  Show requested/granted capabilities
+  palorder-app revoke APP_ID storage  Reset storage permission consent
   palorder-app --help          Show this help
 
 Apps live in ~/.local/share/palorder/apps/APP_ID/{manifest,main.lua}.
@@ -26,9 +28,7 @@ run_ui() {
     choice=$(dialog --clear --title "Lua Application Center" --menu "Run local Lua apps or create a new app." 15 64 5 \
       "list" "List installed apps" "run" "Run an app by ID" "create" "Create a Lua app" "help" "Command/API help" "exit" "Return to desktop" 3>&1 1>&2 2>&3) || return 0
     case "$choice" in
-      list)
-        result=$("$0" list)
-        dialog --title "Installed Lua apps" --msgbox "$result" 18 64 ;;
+      list) result=$("$0" list); dialog --title "Installed Lua apps" --msgbox "$result" 18 64 ;;
       run)
         id=$(dialog --stdout --title "Run Lua app" --inputbox "App ID:" 9 52) || continue
         valid_id "$id" || { dialog --title "Invalid ID" --msgbox "Use lowercase letters, digits, underscore or hyphen; begin with a letter." 8 60; continue; }
@@ -87,6 +87,23 @@ api.ui.message(api.app.name, "Launch count: " .. count .. "\nRuntime API: " .. a
 LUA
     chmod 600 "$dir/manifest" "$dir/main.lua"
     printf 'Created %s\nRun: palorder-app run %s\nEdit: %s/main.lua\n' "$dir" "$2" "$dir"
+    ;;
+  permissions)
+    [ "$#" -eq 2 ] || { echo "Usage: palorder-app permissions APP_ID" >&2; exit 2; }
+    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
+    dir="$APP_ROOT/$2"
+    [ -f "$dir/manifest" ] || { echo "App not found: $2" >&2; exit 1; }
+    printf 'Manifest permissions: '
+    sed -n 's/^permissions=//p' "$dir/manifest"
+    grant="/root/.config/palorder/permissions/$2.storage"
+    if [ -f "$grant" ]; then printf 'Storage decision: '; cat "$grant"; else echo "Storage decision: not asked yet"; fi
+    ;;
+  revoke)
+    [ "$#" -eq 3 ] || { echo "Usage: palorder-app revoke APP_ID storage" >&2; exit 2; }
+    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
+    [ "$3" = storage ] || { echo "Supported permission: storage" >&2; exit 2; }
+    rm -f "/root/.config/palorder/permissions/$2.storage"
+    echo "Storage consent reset for $2. The app will ask again on its next launch."
     ;;
   info)
     [ "$#" -eq 2 ] || { echo "Usage: palorder-app info APP_ID" >&2; exit 2; }
