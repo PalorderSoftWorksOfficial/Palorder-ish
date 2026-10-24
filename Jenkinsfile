@@ -56,6 +56,13 @@ pipeline {
                     grep -Fq 'palorder-shell' install.sh
                     grep -Fq 'palorder-network' install.sh
                     grep -Fq 'palorder-history' install.sh
+                    grep -Fq 'palorder-dev' install.sh
+                    grep -Fq 'SHELL=/bin/bash' install.sh
+                    grep -Fq '0.5.0' runtime/palorder-version
+                    grep -Fq 'commits?per_page=20' runtime/palorder-history
+                    grep -Fq 'api.window=' runtime/palorder-lua-host
+                    grep -Fq 'api.ui.password=' runtime/palorder-lua-host
+                    grep -Fq 'command -v ifconfig' runtime/palorder-network
                     grep -Fq 'pkg-compat apt' runtime/apt
                     grep -Fq 'pkg-compat pacman' runtime/pacman
                     grep -Fq 'apk update' install.sh
