@@ -23,7 +23,11 @@ command -v curl >/dev/null 2>&1 || fail "curl is required. Install it with: apk 
 command -v apk >/dev/null 2>&1 || fail "apk was not found. This installer requires Alpine/iSH."
 mkdir -p "$BIN_DIR" "$CONFIG_DIR"
 say "Ensuring dialog and Lua 5.4 are installed..."
-apk add --no-cache dialog lua5.4 || fail "Could not install dialog/Lua 5.4. Check /etc/apk/repositories and network."
+if ! apk add --no-cache dialog lua5.4; then
+  say "Package installation failed; refreshing Alpine indexes and retrying..."
+  apk update || fail "Could not refresh Alpine package indexes. Check network access and /etc/apk/repositories."
+  apk add --no-cache dialog lua5.4 || fail "Could not install dialog/Lua 5.4. Check package availability and /etc/apk/repositories."
+fi
 if ! command -v dialog >/dev/null 2>&1; then fail "dialog package installed but the dialog command is missing."; fi
 LUA_BIN=""
 for candidate in lua5.4 lua54 lua; do
