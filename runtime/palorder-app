@@ -10,21 +10,22 @@ find_lua() {
   done
   return 1
 }
-ensure_lua() {
-  LUA_BIN=$(find_lua) && return 0
-  printf '%s\n' "Lua 5.4 is missing. Attempting to install it from the configured Alpine repositories..."
+ensure_runtime() {
+  LUA_BIN=$(find_lua 2>/dev/null || :)
+  if [ -n "$LUA_BIN" ] && command -v dialog >/dev/null 2>&1; then return 0; fi
+  printf '%s\n' "Checking Lua Application Center requirements: Lua 5.4 and dialog..."
   if ! command -v apk >/dev/null 2>&1; then
     printf '%s\n' "apk is unavailable; this launcher expects Alpine/iSH." >&2
     return 1
   fi
-  if ! apk add --no-cache lua5.4; then
+  if ! apk add --no-cache lua5.4 dialog; then
     printf '%s\n' "Package install failed; refreshing Alpine indexes and retrying..."
     apk update || {
       printf '%s\n' "Could not refresh Alpine indexes. Check network and /etc/apk/repositories." >&2
       return 1
     }
-    apk add --no-cache lua5.4 || {
-      printf '%s\n' "Could not install Lua 5.4. Check package availability with: apk search lua" >&2
+    apk add --no-cache lua5.4 dialog || {
+      printf '%s\n' "Could not install Lua 5.4 and dialog. Check package availability with: apk search lua" >&2
       return 1
     }
   fi
@@ -32,7 +33,11 @@ ensure_lua() {
     printf '%s\n' "The package install completed, but no Lua 5.4 interpreter was found." "Check package availability with: apk info -L lua5.4" >&2
     return 1
   }
-  printf 'Using Lua interpreter: %s\n' "$LUA_BIN"
+  command -v dialog >/dev/null 2>&1 || {
+    printf '%s\n' "dialog is still unavailable after package installation." >&2
+    return 1
+  }
+  printf 'Runtime ready. Lua interpreter: %s\n' "$LUA_BIN"
 }
 usage() {
   cat <<'HELP'
@@ -56,7 +61,7 @@ HELP
 }
 valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}$'; }
 run_ui() {
-  if ! ensure_lua; then
+  if ! ensure_runtime; then
     if command -v dialog >/dev/null 2>&1; then
       dialog --title "Lua runtime unavailable" --msgbox "Palorder could not install Lua 5.4. Check network access and Alpine repositories, then run: apk update && apk add lua5.4" 10 68
     fi
@@ -82,7 +87,6 @@ run_ui() {
   done
 }
 if [ "$#" -eq 0 ]; then
-  command -v dialog >/dev/null 2>&1 || { usage; exit 0; }
   run_ui
   exit 0
 fi
@@ -102,7 +106,7 @@ case "$1" in
   run)
     [ "$#" -eq 2 ] || { echo "Usage: palorder-app run APP_ID" >&2; exit 2; }
     valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    ensure_lua || exit 1
+    ensure_runtime || exit 1
     [ -f "$HOST" ] || { echo "Lua host is missing: $HOST. Repair with: palorder-update" >&2; exit 1; }
     exec "$LUA_BIN" "$HOST" "$2"
     ;;
