@@ -7,20 +7,24 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ] || [ "${1:-}" = "help" ]; then
 Palorder iSH — terminal-first environment for iSH/Alpine
 
 Usage:
-  palorder                 Open the interactive boot menu
-  palorder help            Show this command reference
-  palorder-app --help      Manage/run Lua applications
-  apt install PACKAGE     Install Alpine packages using apt-style syntax
-  pacman -S PACKAGE       Install Alpine packages using pacman-style syntax
-  check-update --help      Check upstream runtime versions/files
-  palorder-update --help   Update managed runtime scripts
-  palorder-control         Open Control Center
-  palorder-setup           Open the setup wizard
-  palorder-settings        Change theme, banner and display name
-  palorder-packages        Search/install/remove Alpine packages
-  palorder-utilities       Inspect system, storage and networking
-  palorder-run-task        Run a manually confirmed shell command
-  palorder-terminal        Start a shell in the configured workspace
+  palorder                  Open the interactive boot menu
+  palorder help             Show this command reference
+  palorder-packages         Package manager (or search/install/remove/list)
+  palorder-shell            Choose the default terminal shell (Bash by default)
+  palorder-network          Phone/network diagnostics and settings limitations
+  palorder-history          Upstream commit registry and release notes
+  palorder-dev setup        Set up best-effort /dev/palorder links
+  palorder-dev urandom N    Emit N random bytes
+  palorder-app --help       Manage/run Lua applications
+  apt install PACKAGE       Install Alpine packages using apt-style syntax
+  pacman -S PACKAGE         Install Alpine packages using pacman-style syntax
+  check-update --help       Check upstream runtime versions/files
+  palorder-update --help    Update managed runtime scripts
+  palorder-control          Open Control Center
+  palorder-setup            Open the setup wizard
+  palorder-settings         Change theme, banner, name and shell
+  palorder-utilities        Inspect system, storage and networking
+  palorder-terminal         Start a terminal in the configured workspace
 
 This runs inside iSH's Alpine userland, not as a full Linux VM/desktop.
 HELP
@@ -29,18 +33,41 @@ fi
 [ -x "$BIN_DIR/palorder-boot" ] && "$BIN_DIR/palorder-boot"
 mkdir -p "$CONFIG_DIR"
 if [ ! -f "$CONFIG_DIR/setup-complete" ] && [ -x "$BIN_DIR/palorder-setup" ]; then "$BIN_DIR/palorder-setup"; : > "$CONFIG_DIR/setup-complete"; fi
-command -v dialog >/dev/null 2>&1 || { printf '%s\n' "Palorder requires dialog. Install it with: apk add dialog"; exec sh; }
+command -v dialog >/dev/null 2>&1 || { printf '%s\n' "Palorder requires dialog. Install it with: apk add dialog"; exec /bin/bash; }
+term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
+set -- $term_size
+rows=${1:-24}; cols=${2:-80}
+case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
+[ "$rows" -le 24 ] || rows=24
+[ "$rows" -ge 14 ] || rows=14
+[ "$cols" -le 80 ] || cols=80
+[ "$cols" -ge 36 ] || cols=36
+menu_h=$((rows - 8))
 while :; do
   theme=midnight
   [ ! -f "$CONFIG_DIR/settings" ] || theme=$(sed -n 's/^THEME=//p' "$CONFIG_DIR/settings" | head -n 1)
   case "$theme" in violet) accent="\Zb\Z5" ;; amber) accent="\Zb\Z3" ;; emerald) accent="\Zb\Z2" ;; mono) accent="\Zb\Z7" ;; *) accent="\Zb\Z6" ;; esac
-  choice=$(dialog --colors --clear --backtitle "${accent}PALORDER • BOOT MANAGER\Zn" --title "Palorder Boot Menu" --menu "\n  Use ↑/↓ and Enter to choose a session.\n  GRUB-inspired menu for the iSH environment.\n" 22 72 11 \
-    "terminal" "Terminal session" "control" "Control Center" "apps" "Lua application manager" "check" "Check for Palorder updates" "setup" "First-run setup wizard" "packages" "Package manager" "utilities" "System utilities and diagnostics" "task" "Run a command" "update" "Update / repair Palorder" "safe" "Safe shell (skip Palorder UI)" "exit" "Exit to shell" 3>&1 1>&2 2>&3) || exit 0
+  choice=$(dialog --colors --clear --backtitle "${accent}PALORDER • BOOT MANAGER\Zn" --title "Palorder Boot Menu" --menu "\nUse ↑/↓ and Enter to choose.\nGRUB-inspired menu for iSH." "$rows" "$cols" "$menu_h" \
+    "terminal" "Terminal session" "control" "Control Center" "apps" "Lua applications" \
+    "packages" "Package manager" "network" "Phone & network settings" \
+    "shell" "Default shell" "history" "Release notes / commits" \
+    "check" "Check for Palorder updates" "setup" "First-run setup wizard" \
+    "utilities" "System utilities and diagnostics" "task" "Run a command" \
+    "update" "Update / repair Palorder" "safe" "Safe shell (skip Palorder UI)" "exit" "Exit to shell" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
-    terminal) "$BIN_DIR/palorder-terminal" ;; control) "$BIN_DIR/palorder-control" ;;
-    apps) "$BIN_DIR/palorder-app" ;; check) if "$BIN_DIR/check-update"; then dialog --title "Update check" --msgbox "Check complete. See terminal output for details." 8 56; else dialog --title "Update check failed" --msgbox "Could not check updates. Check network access and try again." 8 56; fi ;;
-    setup) "$BIN_DIR/palorder-setup" ;; packages) "$BIN_DIR/palorder-packages" ;; utilities) "$BIN_DIR/palorder-utilities" ;;
-    task) "$BIN_DIR/palorder-run-task" ;; update) "$BIN_DIR/palorder-update" ;;
-    safe) clear 2>/dev/null || :; exec sh ;; exit) clear 2>/dev/null || :; exit 0 ;;
+    terminal) "$BIN_DIR/palorder-terminal" ;;
+    control) "$BIN_DIR/palorder-control" ;;
+    apps) "$BIN_DIR/palorder-app" ;;
+    packages) "$BIN_DIR/palorder-packages" ;;
+    network) "$BIN_DIR/palorder-network" ;;
+    shell) "$BIN_DIR/palorder-shell" ;;
+    history) "$BIN_DIR/palorder-history" ;;
+    check) if "$BIN_DIR/check-update"; then dialog --title "Update check" --msgbox "Check complete. See terminal output for details." 8 56; else dialog --title "Update check failed" --msgbox "Could not check updates. Check network access and try again." 8 56; fi ;;
+    setup) "$BIN_DIR/palorder-setup" ;;
+    utilities) "$BIN_DIR/palorder-utilities" ;;
+    task) "$BIN_DIR/palorder-run-task" ;;
+    update) "$BIN_DIR/palorder-update" ;;
+    safe) clear 2>/dev/null || :; exec /bin/bash -i ;;
+    exit) clear 2>/dev/null || :; exit 0 ;;
   esac
 done
