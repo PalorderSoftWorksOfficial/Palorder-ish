@@ -8,7 +8,7 @@ Open iSH and run:
 
     curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh | sh
 
-The installer prints a numbered bootstrap sequence, refreshes Alpine indexes, installs and verifies Lua 5.4, Bash, dialog, core command-line utilities, archive tools, networking diagnostics, Python/pip, Git, editors, SSH, and build tools before launching the UI. If package setup fails, it stops with an error instead of opening a partially installed desktop. The Application Center also attempts to repair a missing Lua runtime. Use --safe to install missing files only.
+The installer prints a numbered bootstrap sequence, refreshes Alpine indexes, installs and verifies Lua 5.4, Bash, dialog, core command-line utilities, and Git before launching the UI. It then attempts to install optional archive tools, networking diagnostics, Python/pip, editors, SSH, and build tools, warning if a repository cannot provide an optional group. If required runtime setup fails, it stops with an error instead of opening a partially installed desktop. The Application Center also attempts to repair a missing Lua runtime. Use --safe to install missing files only.
 
 ## Updates
 
