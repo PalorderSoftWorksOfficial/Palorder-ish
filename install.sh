@@ -25,7 +25,7 @@ mkdir -p "$BIN_DIR" "$CONFIG_DIR"
 say "[1/4] Refreshing Alpine package indexes..."
 if ! apk update; then fail "apk update failed. Check network access and /etc/apk/repositories."; fi
 say "[2/4] Installing the Palorder runtime and essential Linux command-line tools..."
-BASE_PACKAGES="bash dialog lua5.4 curl wget ca-certificates coreutils findutils grep sed gawk less file tar gzip xz zip unzip git python3 py3-pip jq nano vim tmux openssh-client procps tree util-linux bind-tools iproute2 iputils"
+BASE_PACKAGES="bash dialog lua5.4 curl wget ca-certificates coreutils findutils grep sed gawk less file tar gzip xz zip unzip diffutils patch bc git python3 py3-pip jq nano vim tmux openssh-client procps tree util-linux bind-tools iproute2 iputils build-base musl-dev linux-headers"
 if ! apk add --no-cache $BASE_PACKAGES; then
   fail "Essential package installation failed. Check the package names and configured Alpine repositories; Palorder has not started yet."
 fi
