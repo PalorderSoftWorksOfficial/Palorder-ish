@@ -4,6 +4,7 @@ CONFIG_DIR="${HOME:-/root}/.config/palorder"
 SETTINGS="$CONFIG_DIR/settings"
 mkdir -p "$CONFIG_DIR"
 [ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$SETTINGS"
+grep -q '^SHELL=' "$SETTINGS" || printf 'SHELL=/bin/bash\n' >> "$SETTINGS"
 get_shell() { sed -n 's/^SHELL=//p' "$SETTINGS" | head -n 1; }
 save_shell() {
   shell_path=$1
