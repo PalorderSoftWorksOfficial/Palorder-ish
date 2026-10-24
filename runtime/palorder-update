@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+BASE="https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main"
+BIN_DIR="/root/bin"
+CONFIG_DIR="/root/.config/palorder"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-packages palorder-update palorder-run-task palorder-utilities"
+command -v curl >/dev/null 2>&1 || { printf '%s\n' "curl is required."; exit 1; }
+mkdir -p "$BIN_DIR" "$CONFIG_DIR"
+tmpdir="$CONFIG_DIR/update.$$"
+mkdir -p "$tmpdir"
+trap 'rm -rf "$tmpdir"' EXIT HUP INT TERM
+for file in $FILES; do
+  printf 'Fetching %s...\n' "$file"
+  curl -fLsS --connect-timeout 15 --max-time 120 "$BASE/runtime/$file" -o "$tmpdir/$file" || { printf 'Update aborted: could not fetch %s.\n' "$file" >&2; exit 1; }
+  [ -s "$tmpdir/$file" ] || { printf 'Update aborted: empty file %s.\n' "$file" >&2; exit 1; }
+  chmod 755 "$tmpdir/$file"
+done
+for file in $FILES; do cp "$tmpdir/$file" "$BIN_DIR/$file"; done
+printf '%s\n' "Runtime files updated from main."
