@@ -55,7 +55,7 @@ pipeline {
                     grep -Fq 'pkg-compat apt' runtime/apt
                     grep -Fq 'pkg-compat pacman' runtime/pacman
                     grep -Fq 'apk update' install.sh
-                    grep -Fq 'ensure_lua' runtime/palorder-app
+                    grep -Fq 'ensure_runtime' runtime/palorder-app
                     grep -Fq 'exec "$LUA_BIN" "$HOST" "$2"' runtime/palorder-app
                     for forbidden in 'AGENTS.md' 'README.md' 'CONTRIBUTING.md' 'SECURITY.md' 'Jenkinsfile' '.github'; do
                         if grep -Fq "$forbidden" install.sh; then
