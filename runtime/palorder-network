@@ -8,7 +8,7 @@ network_report() {
   elif command -v ifconfig >/dev/null 2>&1; then
     out="$out$(ifconfig -a 2>&1 || true)\n\nRoutes:\n$(route -n 2>&1 || true)"
   else
-    out="$out@ifconfig/iproute tools are not installed. Try: apk add net-tools iproute2"
+    out="$out""No interface tool found. Install with: apk add net-tools (ifconfig/route) or apk add iproute2 (ip)."
   fi
   out="$out\n\nHTTPS connectivity:\n"
   if command -v curl >/dev/null 2>&1; then
@@ -25,16 +25,11 @@ phone_report() {
   printf 'Userland: iSH / Alpine Linux compatibility environment\n'
   printf 'Architecture reported by iSH: %s\n' "$(uname -m 2>/dev/null || echo unknown)"
   printf 'Kernel interface: %s\n' "$(uname -sr 2>/dev/null || echo unavailable)"
-  printf 'iOS version: not exposed to iSH\n'
-  printf 'Wi-Fi SSID / signal: not exposed to iSH\n'
-  printf 'Bluetooth state / controls: not exposed to iSH\n'
-  printf 'Battery / cellular radio / location: not exposed to iSH\n'
+  printf 'iOS version: not exposed to iSH\nWi-Fi SSID / signal: not exposed to iSH\nBluetooth state / controls: not exposed to iSH\nBattery / cellular radio / location: not exposed to iSH\n'
   printf '\nUse iOS Settings for actual Wi-Fi, Bluetooth, cellular, battery and privacy controls. iOS app sandboxing prevents this shell from toggling system radios.'
 }
 case "${1:-}" in
-  --help|-h)
-    printf '%s\n' 'palorder-network — inspect networking and available device information' 'Usage: palorder-network [network|phone|--help]'
-    exit 0 ;;
+  --help|-h) printf '%s\n' 'palorder-network — inspect networking and available device information' 'Usage: palorder-network [network|phone|--help]'; exit 0 ;;
   network) network_report; exit 0 ;;
   phone) phone_report; exit 0 ;;
 esac
