@@ -1,0 +1,34 @@
+#!/bin/sh
+set -eu
+CONFIG_DIR="/root/.config/palorder"
+SETTINGS="$CONFIG_DIR/settings"
+IDENTITY="$CONFIG_DIR/identity"
+mkdir -p "$CONFIG_DIR"
+[ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' > "$SETTINGS"
+[ -f "$IDENTITY" ] || printf '%s\n' 'Palorder User' > "$IDENTITY"
+read_setting() { sed -n "s/^$1=//p" "$SETTINGS" | head -n 1; }
+write_setting() {
+  key=$1; value=$2; tmp="$SETTINGS.tmp.$$"
+  awk -F= -v key="$key" '$1 != key { print }' "$SETTINGS" > "$tmp"
+  printf '%s=%s\n' "$key" "$value" >> "$tmp"
+  mv "$tmp" "$SETTINGS"
+}
+while :; do
+  theme=$(read_setting THEME); banner=$(read_setting SHOW_BANNER); name=$(cat "$IDENTITY")
+  choice=$(dialog --clear --title "Appearance and preferences" --menu "Theme: $theme | Boot banner: $banner | Name: $name" 17 64 5 \
+    "theme" "Choose color theme" "banner" "Toggle boot banner" "name" "Change display name" "reset" "Reset theme and banner" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    theme)
+      selected=$(dialog --stdout --title "Color theme" --menu "Choose a palette:" 15 52 5 \
+        "midnight" "Cyan / midnight" "violet" "Violet" "amber" "Amber" "emerald" "Emerald" "mono" "Monochrome" 3>&1 1>&2 2>&3) || continue
+      write_setting THEME "$selected" ;;
+    banner) if [ "$banner" = "1" ]; then write_setting SHOW_BANNER 0; else write_setting SHOW_BANNER 1; fi ;;
+    name)
+      new_name=$(dialog --stdout --title "Display name" --inputbox "Name shown at startup:" 10 56 "$name") || continue
+      [ -n "$new_name" ] || { dialog --title "Invalid name" --msgbox "The display name cannot be empty." 7 44; continue; }
+      printf '%s\n' "$new_name" > "$IDENTITY" ;;
+    reset)
+      if dialog --title "Reset preferences" --yesno "Reset theme and boot banner only? Your display name and installed packages remain unchanged." 10 62; then write_setting THEME midnight; write_setting SHOW_BANNER 1; fi ;;
+    back) exit 0 ;;
+  esac
+done
