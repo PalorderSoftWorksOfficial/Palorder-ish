@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-APP_ROOT="\${HOME:-/root}/.local/share/palorder/apps"
+APP_ROOT="${HOME:-/root}/.local/share/palorder/apps"
 HOST="/root/bin/palorder-lua-host"
 usage() {
   cat <<'HELP'
@@ -20,13 +20,13 @@ and arbitrary shell execution. This is not a separate OS-user sandbox.
 HELP
 }
 valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}$'; }
-case "\${1:-}" in
+case "${1:-}" in
   --help|-h|help|"") usage; exit 0 ;;
   list)
     mkdir -p "$APP_ROOT"; found=0
     for file in "$APP_ROOT"/*/main.lua; do
       [ -f "$file" ] || continue; found=1
-      printf '%s\n' "\${file%/main.lua}" | sed "s|^$APP_ROOT/||"
+      printf '%s\n' "${file%/main.lua}" | sed "s|^$APP_ROOT/||"
     done
     [ "$found" -eq 1 ] || echo "No apps installed. Create one: palorder-app create hello"
     ;;
