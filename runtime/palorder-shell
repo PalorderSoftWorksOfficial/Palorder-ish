@@ -52,11 +52,16 @@ while :; do
     "custom" "Choose an installed shell path" "back" "Return" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     bash) shell_path=/bin/bash ;;
-    zsh) shell_path=/bin/zsh; if [ ! -x "$shell_path" ]; then
-      if dialog --title "Install Zsh" --yesno "Zsh is not installed. Install it from the configured Alpine repositories?" 9 64; then
-        if ! apk add --no-cache zsh; then dialog --title "Install failed" --msgbox "Could not install zsh. Check repositories and network." 8 56; continue; fi
-      else continue; fi
-    fi ;;
+    zsh)
+      shell_path=$(command -v zsh 2>/dev/null || :)
+      if [ -z "$shell_path" ]; then
+        if dialog --title "Install Zsh" --yesno "Zsh is not installed. Install it from the configured Alpine repositories?" 9 64; then
+          if ! apk add --no-cache zsh; then dialog --title "Install failed" --msgbox "Could not install zsh. Check repositories and network." 8 56; continue; fi
+          shell_path=$(command -v zsh 2>/dev/null || :)
+        else continue; fi
+      fi
+      [ -n "$shell_path" ] || { dialog --title "Zsh unavailable" --msgbox "Could not find the installed zsh executable." 8 56; continue; }
+      ;;
     ash) shell_path=/bin/ash ;;
     sh) shell_path=/bin/sh ;;
     custom)
