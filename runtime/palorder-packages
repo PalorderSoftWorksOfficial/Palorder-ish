@@ -44,6 +44,15 @@ case "${1:-}" in
   *) echo "Unknown command: $1" >&2; usage >&2; exit 2 ;;
 esac
 while :; do
+  term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
+  case "$term_size" in
+    *" "*) rows=${term_size%% *}; cols=${term_size#* } ;;
+    *) rows=24; cols=80 ;;
+  esac
+  case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
+  [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 14 ] || rows=14
+  [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
+  menu_h=$((rows - 8))
   choice=$(dialog --clear --title "Palorder Package Manager" --menu "Alpine apk • Current shell: $(sed -n 's/^SHELL=//p' "${HOME:-/root}/.config/palorder/settings" 2>/dev/null | head -n 1)" 20 70 10 \
     "update" "Refresh repository indexes" "upgrade" "Upgrade installed packages" \
     "search" "Search packages" "install" "Install package(s)" "remove" "Remove package(s)" \
