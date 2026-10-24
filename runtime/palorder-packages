@@ -15,13 +15,19 @@ while :; do
       names=$(dialog --stdout --title "Install packages" --inputbox "Package names separated by spaces:" 10 60) || continue
       [ -n "$names" ] || continue
       if dialog --title "Confirm install" --yesno "Install these package names?\n\n$names" 10 60; then
-        set -f; apk add --no-cache $names; set +f
+        set -f
+        # shellcheck disable=SC2086
+        apk add --no-cache $names
+        set +f
       fi ;;
     remove)
       names=$(dialog --stdout --title "Remove packages" --inputbox "Package names separated by spaces:" 10 60) || continue
       [ -n "$names" ] || continue
       if dialog --title "Confirm removal" --yesno "Remove these package names?\n\n$names" 10 60; then
-        set -f; apk del $names; set +f
+        set -f
+        # shellcheck disable=SC2086
+        apk del $names
+        set +f
       fi ;;
     back) exit 0 ;;
   esac
