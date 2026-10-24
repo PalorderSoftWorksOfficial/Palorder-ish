@@ -50,6 +50,10 @@ pipeline {
                     grep -Fq 'palorder-settings' install.sh
                     grep -Fq 'palorder-lua-host' install.sh
                     grep -Fq 'check-update' install.sh
+                    grep -Fq 'apk add --no-cache dialog lua5.4' install.sh
+                    grep -Fq 'apk update' install.sh
+                    grep -Fq 'ensure_lua' runtime/palorder-app
+                    grep -Fq 'exec "$LUA_BIN" "$HOST" "$2"' runtime/palorder-app
                     for forbidden in 'AGENTS.md' 'README.md' 'CONTRIBUTING.md' 'SECURITY.md' 'Jenkinsfile' '.github'; do
                         if grep -Fq "$forbidden" install.sh; then
                             echo "Installer unexpectedly references development file: $forbidden" >&2
