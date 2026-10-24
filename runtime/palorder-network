@@ -1,0 +1,55 @@
+#!/bin/sh
+set -eu
+show_info() { dialog --title "$1" --msgbox "$2" 22 74; }
+network_report() {
+  out="Network diagnostics (iSH userland)\n\nDNS:\n$(cat /etc/resolv.conf 2>&1 || true)\n\nInterfaces:\n"
+  if command -v ip >/dev/null 2>&1; then
+    out="$out$(ip address 2>&1 || true)\n\nRoutes:\n$(ip route 2>&1 || true)"
+  elif command -v ifconfig >/dev/null 2>&1; then
+    out="$out$(ifconfig -a 2>&1 || true)\n\nRoutes:\n$(route -n 2>&1 || true)"
+  else
+    out="$out@ifconfig/iproute tools are not installed. Try: apk add net-tools iproute2"
+  fi
+  out="$out\n\nHTTPS connectivity:\n"
+  if command -v curl >/dev/null 2>&1; then
+    out="$out$(curl -I -L --connect-timeout 5 --max-time 12 -sS -o /dev/null -w 'GitHub HTTP status: %{http_code}\nRemote IP: %{remote_ip}\n' https://github.com 2>&1 || true)"
+  else out="$out curl is not installed."; fi
+  printf '%s' "$out"
+}
+phone_report() {
+  model="Not exposed to iSH"
+  for candidate in /sys/firmware/devicetree/base/model /proc/device-tree/model; do
+    if [ -r "$candidate" ]; then model=$(tr -d '\000' < "$candidate"); break; fi
+  done
+  printf 'Device model: %s\n' "$model"
+  printf 'Userland: iSH / Alpine Linux compatibility environment\n'
+  printf 'Architecture reported by iSH: %s\n' "$(uname -m 2>/dev/null || echo unknown)"
+  printf 'Kernel interface: %s\n' "$(uname -sr 2>/dev/null || echo unavailable)"
+  printf 'iOS version: not exposed to iSH\n'
+  printf 'Wi-Fi SSID / signal: not exposed to iSH\n'
+  printf 'Bluetooth state / controls: not exposed to iSH\n'
+  printf 'Battery / cellular radio / location: not exposed to iSH\n'
+  printf '\nUse iOS Settings for actual Wi-Fi, Bluetooth, cellular, battery and privacy controls. iOS app sandboxing prevents this shell from toggling system radios.'
+}
+case "${1:-}" in
+  --help|-h)
+    printf '%s\n' 'palorder-network — inspect networking and available device information' 'Usage: palorder-network [network|phone|--help]'
+    exit 0 ;;
+  network) network_report; exit 0 ;;
+  phone) phone_report; exit 0 ;;
+esac
+while :; do
+  choice=$(dialog --clear --title "Phone & Network Settings" --menu "iOS-compatible information and network diagnostics. System radio controls are not available to iSH." 18 72 5 \
+    "phone" "Device model and available system information" \
+    "wifi" "Wi-Fi diagnostics (not a Wi-Fi toggle)" \
+    "network" "Interfaces, routes, DNS and HTTPS test" \
+    "bluetooth" "Bluetooth availability and iOS limitation" \
+    "privacy" "Privacy and sandbox limitations" "back" "Return" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    phone) report=$(phone_report); show_info "Device information" "$report" ;;
+    wifi|network) report=$(network_report); show_info "Network diagnostics" "$report" ;;
+    bluetooth) show_info "Bluetooth" "iSH cannot access or toggle the iOS Bluetooth radio. Check Bluetooth permissions and device connections in iOS Settings. No Bluetooth hardware state is exposed to this shell." ;;
+    privacy) show_info "iOS sandbox" "Palorder runs inside the iSH app sandbox. It cannot read arbitrary iOS settings, enumerate other apps, control Wi-Fi/Bluetooth/cellular radios, or access private device APIs. It can inspect only the Linux-like userland and network interfaces exposed by iSH." ;;
+    back) exit 0 ;;
+  esac
+done
