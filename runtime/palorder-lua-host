@@ -38,6 +38,24 @@ local function dialog(args)
   if ok then return out end
   return nil
 end
+local permission_root = "/root/.config/palorder/permissions"
+os.execute("mkdir -p " .. shell_quote(permission_root))
+local granted = {}
+if declared.storage then
+  local permission_path = permission_root .. "/" .. app_id .. ".storage"
+  local pf = io.open(permission_path, "r")
+  local status = pf and pf:read("*l") or nil
+  if pf then pf:close() end
+  if status == "granted" then
+    granted.storage = true
+  elseif status == nil then
+    local approved = dialog({"--title", "App permission", (manifest.name or app_id) .. " requests permission to save data in its private Palorder app-storage folder. Grant storage access?", "12", "68"})
+    local value = approved ~= nil and "granted\n" or "denied\n"
+    local wh = io.open(permission_path, "w")
+    if wh then wh:write(value); wh:close() end
+    granted.storage = approved ~= nil
+  end
+end
 local api={version="1.0",app={id=app_id,name=manifest.name or app_id,version=manifest.version or "0.1.0"}}
 api.ui={
   message=function(title,body)
@@ -66,7 +84,8 @@ api.ui={
 }
 api.storage={
   get=function(key)
-    if not declared.storage then error("permission denied: storage is not declared in manifest") end
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
     if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     local h=io.open(app_data.."/"..key,"rb")
     if not h then return nil end
@@ -75,7 +94,8 @@ api.storage={
     return value
   end,
   set=function(key,value)
-    if not declared.storage then error("permission denied: storage is not declared in manifest") end
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
     if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     if type(value)~="string" or #value>65536 then error("storage value must be a string up to 64 KiB") end
     local tmp=app_data.."/."..key..".tmp"
@@ -86,7 +106,8 @@ api.storage={
     return true
   end,
   delete=function(key)
-    if not declared.storage then error("permission denied: storage is not declared in manifest") end
+    if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
+    if not granted.storage then error("permission denied: storage access was not granted; run palorder-app revoke APP_ID storage to ask again") end
     if type(key)~="string" or key=="." or key==".." or not key:match("^[%w_.-]+$") or #key>80 then error("invalid storage key") end
     return os.remove(app_data.."/"..key)
   end
