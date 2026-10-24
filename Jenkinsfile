@@ -38,7 +38,7 @@ pipeline {
                             exit 1
                         fi
                     done
-                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities; do
+                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control; do
                         test -s "runtime/$file"
                     done
                 '''
