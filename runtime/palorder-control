@@ -2,14 +2,31 @@
 set -eu
 BIN_DIR="/root/bin"
 while :; do
-  choice=$(dialog --clear --title "Palorder Control Center" --menu "Workspace, development and runtime controls." 21 70 12 \
-    "terminal" "Open terminal session" "apps" "Lua application manager" "check" "Check for Palorder updates" \
-    "packages" "Package manager" "devtools" "Install developer toolchain" "files" "Browse files (if available)" \
-    "editor" "Open text editor" "monitor" "System / storage monitor" "network" "Network diagnostics" \
-    "settings" "Appearance and preferences" "setup" "Setup wizard" "back" "Return to boot menu" 3>&1 1>&2 2>&3) || exit 0
+  term_size=$(stty size </dev/tty 2>/dev/null || printf '24 80')
+  case "$term_size" in
+    *" "*) rows=${term_size%% *}; cols=${term_size#* } ;;
+    *) rows=24; cols=80 ;;
+  esac
+  case "$rows:$cols" in *[!0-9:]*|'':*) rows=24; cols=80 ;; esac
+  [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 14 ] || rows=14
+  [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
+  menu_h=$((rows - 8))
+  choice=$(dialog --clear --title "Palorder Control Center" --menu "Workspace, development, device and runtime controls." "$rows" "$cols" "$menu_h" \
+    "terminal" "Open terminal session" "apps" "Lua application manager" \
+    "packages" "Package manager" "devtools" "Install developer toolchain" \
+    "network" "Phone and network settings" "shell" "Choose default shell" \
+    "history" "Release notes and commit registry" "check" "Check for updates" \
+    "files" "Browse files (if available)" "editor" "Open text editor" \
+    "monitor" "System / storage monitor" "settings" "Appearance and preferences" \
+    "setup" "Setup wizard" "back" "Return to boot menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
-    terminal) "$BIN_DIR/palorder-terminal" ;; apps) "$BIN_DIR/palorder-app" ;; check) "$BIN_DIR/check-update" ;;
+    terminal) "$BIN_DIR/palorder-terminal" ;;
+    apps) "$BIN_DIR/palorder-app" ;;
+    check) "$BIN_DIR/check-update" ;;
     packages) "$BIN_DIR/palorder-packages" ;;
+    network) "$BIN_DIR/palorder-network" ;;
+    shell) "$BIN_DIR/palorder-shell" ;;
+    history) if "$BIN_DIR/palorder-history"; then :; else dialog --title "History unavailable" --msgbox "Could not retrieve commit history. Check network access and try again." 8 60; fi ;;
     devtools)
       if dialog --title "Developer toolchain" --yesno "Install Lua 5.4, Git, Python, pip, build tools, headers, curl, jq, nano, vim, tmux and OpenSSH? This downloads packages from configured Alpine repositories." 12 70; then
         if apk add --no-cache lua5.4 git python3 py3-pip build-base musl-dev linux-headers curl jq nano vim tmux openssh-client ca-certificates; then
@@ -25,6 +42,8 @@ while :; do
       elif command -v nano >/dev/null 2>&1; then nano
       else dialog --title "Editor unavailable" --msgbox "Install nano or vim with apk first." 7 44; fi ;;
     monitor) info="System:\n$(uname -a 2>&1)\n\nStorage:\n$(df -h 2>&1)\n\nMemory:\n$(free -h 2>&1 || echo 'free is not installed')"; dialog --title "System monitor" --msgbox "$info" 22 72 ;;
-    network) "$BIN_DIR/palorder-utilities" ;; settings) "$BIN_DIR/palorder-settings" ;; setup) "$BIN_DIR/palorder-setup" ;; back) exit 0 ;;
+    settings) "$BIN_DIR/palorder-settings" ;;
+    setup) "$BIN_DIR/palorder-setup" ;;
+    back) exit 0 ;;
   esac
 done

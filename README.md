@@ -52,6 +52,56 @@ Package names must exist in the Alpine repositories. Unsupported command options
 
 Open Control Center → Install developer toolchain to install Lua 5.4, Git, Python/pip, build tools, headers, curl, jq, nano, vim, tmux, OpenSSH client and CA certificates. Package availability depends on the Alpine repositories enabled in your iSH environment.
 
+## Package manager and shells
+
+Use the interactive package manager from the boot menu or run it directly:
+
+```sh
+palorder-packages
+palorder-packages search lua
+palorder-packages install zsh
+palorder-packages list
+palorder-packages info bash
+```
+
+The compatibility commands `apt`, `apt-get`, and `pacman` translate common operations to Alpine `apk`; they do not install Debian or Arch packages.
+
+Bash is the default shell for Palorder terminal sessions. Change it in Control Center or with:
+
+```sh
+palorder-shell
+palorder-shell list
+palorder-shell set /bin/bash
+```
+
+This setting affects Palorder's terminal only, not iOS or iSH's actual login shell.
+
+## Device and network settings
+
+Open **Phone & Network Settings** from the boot menu or run `palorder-network`. It reports the information available to iSH, including DNS configuration, interfaces and routes (using `ip` when present, otherwise `ifconfig`/ `route`), and a basic HTTPS connectivity test. The installer attempts to install `net-tools`; `iproute2` is optional.
+
+iOS does not expose the device model, iOS version, Wi-Fi SSID/signal, Bluetooth state, battery state or radio controls reliably to iSH. The interface documents these limitations instead of inventing data or claiming it can toggle Wi-Fi/Bluetooth. Use iOS Settings for those controls.
+
+## Device-like paths and random data
+
+```sh
+palorder-dev setup
+palorder-dev path
+palorder-dev urandom 32 > random.bin
+```
+
+The setup command attempts to create `/dev/palorder/{urandom,random,null,zero}` as symlinks to existing device paths. iSH may prevent writes under `/dev`; in that case use the portable directory printed by `palorder-dev path`. The random helper emits bounded raw bytes from `/dev/urandom`; it does not create a new kernel device.
+
+## Versioning and commit registry
+
+```sh
+palorder-history
+palorder-history --commits
+palorder-history --changelog
+```
+
+The release notes are in `CHANGELOG.md`; the installed command retrieves the recent public commit registry from GitHub. Network access is required for commit history.
+
 ## Customize
 
 Run palorder, then open Appearance and preferences.
@@ -68,9 +118,13 @@ Preferences are in /root/.config/palorder/settings; display name is in /root/.co
 - iSH on iPhone or iPad
 - Alpine userland with working apk
 - Network access
-- dialog and Lua 5.4 (the installer attempts to install both)
+- Bash, dialog, Lua 5.4, curl, Python 3 and core utilities (installed by the installer)
 
 iSH is an emulated, app-sandboxed environment, not a full Linux VM. Package compatibility, performance, networking, and background execution differ from desktop Alpine. Palorder does not install XFCE or claim to provide a graphical desktop.
+
+## Lua UI API
+
+Lua apps can use `api.ui` or the equivalent `api.window` helpers for messages, input, confirmation, menus, text viewers, password prompts and checklists. See [docs/LUA_APP_API.md](docs/LUA_APP_API.md).
 
 ## Paths
 

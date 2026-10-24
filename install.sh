@@ -8,7 +8,7 @@ BIN_DIR="/root/bin"
 CONFIG_DIR="/root/.config/palorder"
 STAMP=$(date +%Y%m%d-%H%M%S 2>/dev/null || echo install)
 BACKUP_DIR="$CONFIG_DIR/backups/$STAMP"
-FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman palorder-shell palorder-network palorder-dev palorder-history palorder-changelog"
 say() { printf '%s\n' "Palorder iSH: $*"; }
 fail() { say "ERROR: $*" >&2; exit 1; }
 MODE=update
@@ -31,9 +31,10 @@ if ! apk add --no-cache $CORE_PACKAGES; then
   fail "Required runtime packages could not be installed. Check network access and /etc/apk/repositories; Palorder has not started."
 fi
 say "Installing common command-line, archive, editor, networking and development tools..."
-OPTIONAL_GROUPS="wget gawk less file xz zip unzip diffutils patch bc|py3-pip jq nano vim tmux openssh-client procps tree|util-linux bind-tools iproute2 iputils|build-base musl-dev linux-headers"
+OPTIONAL_GROUPS="wget gawk less file xz zip unzip diffutils patch bc|py3-pip jq nano vim tmux openssh-client procps tree|net-tools|iproute2|bind-tools iputils|build-base musl-dev linux-headers"
 old_ifs=$IFS
 IFS='|'
+# shellcheck disable=SC2086
 for group in $OPTIONAL_GROUPS; do
   IFS=' '
   # shellcheck disable=SC2086
@@ -79,7 +80,8 @@ for file in $FILES; do
   if [ "$MODE" = update ] && [ -f "$BIN_DIR/$file" ]; then cp -p "$BIN_DIR/$file" "$BACKUP_DIR/$file"; fi
   mv "$STAGE/$file" "$BIN_DIR/$file"
 done
-[ -f "$CONFIG_DIR/settings" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' > "$CONFIG_DIR/settings"
+[ -f "$CONFIG_DIR/settings" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$CONFIG_DIR/settings"
+grep -q '^SHELL=' "$CONFIG_DIR/settings" || printf 'SHELL=/bin/bash\n' >> "$CONFIG_DIR/settings"
 [ -f "$CONFIG_DIR/identity" ] || printf '%s\n' "Palorder User" > "$CONFIG_DIR/identity"
 cp "$BIN_DIR/palorder-version" "$CONFIG_DIR/version"
 PROFILE_LINE='export PATH="/root/bin:$PATH"'
@@ -97,6 +99,8 @@ esac
 # END PALORDER AUTO START
 PALORDER_PROFILE
 fi
+say "Setting up best-effort Palorder device paths..."
+"$BIN_DIR/palorder-dev" setup || say "Device path setup is unavailable; use palorder-dev path for the portable fallback."
 say "Installation complete. Preferences and display name were preserved."
 say "Package command compatibility: apt, apt-get and pacman translate supported commands to apk."
 if [ "$MODE" = safe ]; then say "Safe mode kept existing scripts."; else say "Updated managed scripts; backups are in $BACKUP_DIR"; fi

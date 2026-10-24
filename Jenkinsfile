@@ -51,7 +51,18 @@ pipeline {
                     grep -Fq 'palorder-lua-host' install.sh
                     grep -Fq 'check-update' install.sh
                     grep -Fq 'lua5.4' install.sh
-                    grep -Fq 'CORE_PACKAGES=' install.sh
+                    grep -Fq 'CORE_PACKAGES="bash dialog' install.sh
+                    grep -Fq 'OPTIONAL_GROUPS=' install.sh
+                    grep -Fq 'palorder-shell' install.sh
+                    grep -Fq 'palorder-network' install.sh
+                    grep -Fq 'palorder-history' install.sh
+                    grep -Fq 'palorder-dev' install.sh
+                    grep -Fq 'SHELL=/bin/bash' install.sh
+                    grep -Fq '0.5.0' runtime/palorder-version
+                    grep -Fq 'commits?per_page=20' runtime/palorder-history
+                    grep -Fq 'api.window=' runtime/palorder-lua-host
+                    grep -Fq 'api.ui.password=' runtime/palorder-lua-host
+                    grep -Fq 'command -v ifconfig' runtime/palorder-network
                     grep -Fq 'pkg-compat apt' runtime/apt
                     grep -Fq 'pkg-compat pacman' runtime/pacman
                     grep -Fq 'apk update' install.sh
@@ -63,7 +74,7 @@ pipeline {
                             exit 1
                         fi
                     done
-                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman; do
+                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman palorder-shell palorder-network palorder-dev palorder-history palorder-changelog; do
                         test -s "runtime/$file"
                     done
                     test -s docs/LUA_APP_API.md
@@ -76,7 +87,7 @@ pipeline {
                 sh '''
                     set -eu
                     if command -v shellcheck >/dev/null 2>&1; then
-                        shellcheck -s sh install.sh uninstall.sh runtime/palorder runtime/palorder-app runtime/check-update runtime/palorder-control runtime/palorder-update runtime/pkg-compat runtime/apt runtime/apt-get runtime/pacman
+                        shellcheck -s sh install.sh uninstall.sh runtime/palorder runtime/palorder-app runtime/check-update runtime/palorder-control runtime/palorder-update runtime/pkg-compat runtime/apt runtime/apt-get runtime/pacman runtime/palorder-shell runtime/palorder-network runtime/palorder-dev runtime/palorder-history runtime/palorder-changelog
                     else
                         echo 'ShellCheck is not installed on this Jenkins agent; syntax checks passed, ShellCheck skipped.'
                     fi

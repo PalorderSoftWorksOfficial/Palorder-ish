@@ -1,10 +1,18 @@
 #!/bin/sh
 set -eu
-CONFIG_DIR="/root/.config/palorder"
+CONFIG_DIR="${HOME:-/root}/.config/palorder"
 workspace=$(sed -n 's/^WORKSPACE=//p' "$CONFIG_DIR/settings" 2>/dev/null | head -n 1)
+shell_path=$(sed -n 's/^SHELL=//p' "$CONFIG_DIR/settings" 2>/dev/null | head -n 1)
 [ -n "$workspace" ] || workspace="${HOME:-/root}/workspace"
+[ -n "$shell_path" ] || shell_path=/bin/bash
+case "$shell_path" in /*) ;; *) shell_path=/bin/bash ;; esac
+if [ ! -x "$shell_path" ]; then
+  printf 'Configured shell is unavailable: %s\nFalling back to Bash. Change it with palorder-shell.\n' "$shell_path" >&2
+  shell_path=/bin/bash
+fi
+[ -x "$shell_path" ] || { echo "Bash is missing. Repair with: apk add bash" >&2; exit 1; }
 mkdir -p "$workspace"
 clear 2>/dev/null || :
-printf '%s\n' 'PALORDER TERMINAL SESSION' '-------------------------' "Workspace: $workspace" 'Type exit to return to the boot menu.'
+printf '%s\n' 'PALORDER TERMINAL SESSION' '-------------------------' "Workspace: $workspace" "Shell: $shell_path" 'Type exit to return to the boot menu.'
 cd "$workspace"
-exec sh
+exec "$shell_path" -i

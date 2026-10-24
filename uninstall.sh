@@ -9,5 +9,5 @@ else
   IFS= read -r answer
   [ "$answer" = yes ] || exit 0
 fi
-for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version; do rm -f "$BIN_DIR/$file"; done
+for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman palorder-shell palorder-network palorder-dev palorder-history palorder-changelog; do rm -f "$BIN_DIR/$file"; done
 printf '%s\n' "Palorder runtime scripts removed. Preferences and apps remain under $CONFIG_DIR and ~/.local/share/palorder."

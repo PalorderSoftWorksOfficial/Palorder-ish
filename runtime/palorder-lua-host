@@ -1,7 +1,8 @@
 #!/usr/bin/env lua5.4
 local app_id = arg[1]
-local app_root = "/root/.local/share/palorder/apps"
-local data_root = "/root/.local/share/palorder/data"
+local home = os.getenv("HOME") or "/root"
+local app_root = home .. "/.local/share/palorder/apps"
+local data_root = home .. "/.local/share/palorder/data"
 local function fail(msg)
   io.stderr:write("palorder-app: ", tostring(msg), "\n")
   os.exit(2)
@@ -38,7 +39,7 @@ local function dialog(args)
   if ok then return out end
   return nil
 end
-local permission_root = "/root/.config/palorder/permissions"
+local permission_root = home .. "/.config/palorder/permissions"
 os.execute("mkdir -p " .. shell_quote(permission_root))
 local granted = {}
 if declared.storage then
@@ -56,7 +57,7 @@ if declared.storage then
     granted.storage = approved ~= nil
   end
 end
-local api={version="1.0",app={id=app_id,name=manifest.name or app_id,version=manifest.version or "0.1.0"}}
+local api={version="1.1",app={id=app_id,name=manifest.name or app_id,version=manifest.version or "0.1.0"}}
 api.ui={
   message=function(title,body)
     assert(type(title)=="string" and type(body)=="string","message expects strings")
@@ -82,6 +83,52 @@ api.ui={
     return out:gsub("\n$","")
   end
 }
+api.ui.textbox=function(title,body)
+  assert(type(title)=="string" and type(body)=="string","textbox expects strings")
+  local path=os.tmpname()
+  local h,err=io.open(path,"wb")
+  if not h then error(err) end
+  h:write(body); h:close()
+  local ok=dialog({"--title",title,"--textbox",path,"20","70"})
+  os.remove(path)
+  return ok ~= nil
+end
+api.ui.password=function(title,prompt)
+  assert(type(title)=="string" and type(prompt)=="string","password expects strings")
+  local out=dialog({"--stdout","--title",title,"--passwordbox",prompt,"10","64"})
+  if not out then return nil end
+  return (out:sub(-1) == string.char(10)) and out:sub(1,-2) or out
+end
+api.ui.checklist=function(title,prompt,entries)
+  assert(type(entries)=="table","checklist expects an array of {id,label,selected?}")
+  local args={"--stdout","--title",title,"--checklist",prompt,"20","70","12"}
+  for _,entry in ipairs(entries) do
+    assert(type(entry)=="table" and type(entry.id)=="string" and type(entry.label)=="string","invalid checklist entry")
+    args[#args+1]=entry.id; args[#args+1]=entry.label
+    args[#args+1]=entry.selected and "on" or "off"
+  end
+  local out=dialog(args)
+  if not out then return nil end
+  local selected={}
+  for id in out:gmatch('"([^"]+)"') do selected[#selected+1]=id end
+  return selected
+end
+api.window={
+  message=api.ui.message,
+  input=api.ui.input,
+  confirm=api.ui.confirm,
+  menu=api.ui.menu,
+  textbox=api.ui.textbox,
+  password=api.ui.password,
+  checklist=api.ui.checklist
+}
+api.dialog=api.ui
+api.system.network_info=function()
+  local h=io.open("/etc/resolv.conf","r")
+  local dns=h and h:read("*a") or "DNS configuration unavailable"
+  if h then h:close() end
+  return table.concat({"Runtime: iSH / Alpine userland","Network access depends on iSH and iOS permissions.","DNS configuration:",dns}, string.char(10))
+end
 api.storage={
   get=function(key)
     if not declared.storage then error("permission denied: storage capability is not declared in manifest") end
@@ -112,12 +159,12 @@ api.storage={
     return os.remove(app_data.."/"..key)
   end
 }
-api.system={info=function()
+api.system.info=function()
   local p=io.popen("uname -srm 2>/dev/null","r")
   local s=p and p:read("*a") or "unknown"
   if p then p:close() end
   return s:gsub("%s+$","")
-end}
+end
 local safe={
   assert=assert,error=error,ipairs=ipairs,next=next,pairs=pairs,pcall=pcall,
   select=select,tonumber=tonumber,tostring=tostring,type=type,xpcall=xpcall,

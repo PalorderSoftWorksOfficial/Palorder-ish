@@ -30,11 +30,17 @@ App IDs match ^[a-z][a-z0-9_-]{0,47}$. Source files are limited to 256 KiB and s
 ## API reference
 
 - api.app: app id, name, and version metadata.
-- api.version: runtime API version.
+- api.version: runtime API version (currently 1.1).
 - api.ui.message(title, body): display a message dialog.
 - api.ui.input(title, prompt, initial?): get text; returns nil on cancel.
 - api.ui.confirm(title, prompt): return true if accepted.
 - api.ui.menu(title, prompt, entries): entries are { id = "settings", label = "Settings" }; returns the selected id or nil.
+- api.ui.textbox(title, body): display a scrollable text viewer; returns false if cancelled.
+- api.ui.password(title, prompt): display a masked password prompt; returns the entered string or nil on cancel. Apps are responsible for not logging or persisting secrets.
+- api.ui.checklist(title, prompt, entries): entries are { id = "one", label = "First option", selected = true }; returns an array of selected IDs or nil on cancel.
+- api.window: aliases for the dialog helpers above, for window-oriented app code.
+- api.dialog: alias for api.ui.
+- api.system.network_info(): returns a limited report about the iSH runtime and resolver configuration; it does not expose iOS Wi-Fi/Bluetooth controls.
 - api.storage.get(key), set(key, value), delete(key): require both a manifest declaration and user-granted storage permission. Keys are limited to letters, digits, underscore, dot, and hyphen, excluding "." and "..". Data is app-scoped but not encrypted.
 - api.system.info(): returns a short OS/kernel string.
 
