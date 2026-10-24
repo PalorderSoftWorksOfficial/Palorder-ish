@@ -54,7 +54,24 @@ if [ -f /root/.profile ]; then
 else
   printf '%s\n' "$PROFILE_LINE" > /root/.profile
 fi
+PROFILE=/root/.profile
+if ! grep -Fq '# BEGIN PALORDER AUTO START' "$PROFILE"; then
+  cat >> "$PROFILE" <<'PALORDER_PROFILE'
+
+# BEGIN PALORDER AUTO START
+case "$-" in
+  *i*)
+    if [ "${PALORDER_NO_AUTO_START:-0}" != 1 ] && [ -x /root/bin/palorder ]; then
+      exec /root/bin/palorder
+    fi
+    ;;
+esac
+# END PALORDER AUTO START
+PALORDER_PROFILE
+fi
 say "Installation complete. Preferences and display name were preserved."
 if [ "$MODE" = safe ]; then say "Existing scripts were kept. Use --update to replace managed scripts."; else say "Updated managed scripts; backups are in $BACKUP_DIR"; fi
+say "Automatic startup registered in /root/.profile."
+say "Disable automatic startup by setting PALORDER_NO_AUTO_START=1 before the hook."
 say "Launch with: /root/bin/palorder"
 "$BIN_DIR/palorder"
