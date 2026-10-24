@@ -1,0 +1,71 @@
+#!/bin/sh
+set -eu
+CONFIG_DIR="${HOME:-/root}/.config/palorder"
+SETTINGS="$CONFIG_DIR/settings"
+mkdir -p "$CONFIG_DIR"
+[ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$SETTINGS"
+get_shell() { sed -n 's/^SHELL=//p' "$SETTINGS" | head -n 1; }
+save_shell() {
+  shell_path=$1
+  case "$shell_path" in /*) ;; *) echo "Shell must be an absolute executable path." >&2; return 2 ;; esac
+  [ -x "$shell_path" ] || { echo "Not executable: $shell_path" >&2; return 1; }
+  tmp="$SETTINGS.tmp.$$"
+  awk -F= '$1 != "SHELL" {print}' "$SETTINGS" > "$tmp"
+  printf 'SHELL=%s\n' "$shell_path" >> "$tmp"
+  mv "$tmp" "$SETTINGS"
+}
+case "${1:-}" in
+  --help|-h)
+    cat <<'HELP'
+palorder-shell — choose the shell used by Palorder terminal sessions
+
+Usage:
+  palorder-shell             Open shell selector
+  palorder-shell list        List common installed shells
+  palorder-shell set PATH    Select an installed executable shell
+  palorder-shell --help      Show help
+
+Bash is the default. This changes Palorder's terminal preference only; iOS/iSH
+does not expose a normal system login-shell manager. Install a shell first,
+for example: apk add zsh
+HELP
+    exit 0 ;;
+  list)
+    for shell_path in /bin/bash /bin/zsh /bin/ash /bin/sh /usr/bin/fish /usr/bin/zsh; do
+      [ ! -x "$shell_path" ] || printf '%s\n' "$shell_path"
+    done
+    exit 0 ;;
+  set)
+    [ "$#" -eq 2 ] || { echo "Usage: palorder-shell set /absolute/path/to/shell" >&2; exit 2; }
+    save_shell "$2"
+    printf 'Default Palorder shell set to %s\n' "$2"
+    exit 0 ;;
+  "") ;;
+  *) echo "Unknown argument: $1" >&2; exit 2 ;;
+esac
+while :; do
+  current=$(get_shell); [ -n "$current" ] || current=/bin/bash
+  choice=$(dialog --clear --title "Default shell" --menu "Current: $current\nChoose an installed shell. Bash is the default." 16 68 6 \
+    "bash" "Bash — recommended default" "zsh" "Zsh — install with apk add zsh" \
+    "ash" "Alpine ash (/bin/ash)" "sh" "POSIX shell (/bin/sh)" \
+    "custom" "Choose an installed shell path" "back" "Return" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    bash) shell_path=/bin/bash ;;
+    zsh) shell_path=/bin/zsh; if [ ! -x "$shell_path" ]; then
+      if dialog --title "Install Zsh" --yesno "Zsh is not installed. Install it from the configured Alpine repositories?" 9 64; then
+        if ! apk add --no-cache zsh; then dialog --title "Install failed" --msgbox "Could not install zsh. Check repositories and network." 8 56; continue; fi
+      else continue; fi
+    fi ;;
+    ash) shell_path=/bin/ash ;;
+    sh) shell_path=/bin/sh ;;
+    custom)
+      shell_path=$(dialog --stdout --title "Custom shell" --inputbox "Absolute path to an installed shell executable:" 10 66 "$current") || continue
+      ;;
+    back) exit 0 ;;
+  esac
+  if save_shell "$shell_path"; then
+    dialog --title "Shell saved" --msgbox "Palorder terminal will use:\n$shell_path\n\nThis does not change iOS or iSH's system shell." 9 60
+  else
+    dialog --title "Invalid shell" --msgbox "That path is not an executable absolute path." 8 56
+  fi
+done
