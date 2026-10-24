@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+command -v clear >/dev/null 2>&1 && clear || :
+printf '\033[1;36m'
+printf '  ____       _                 _\n'
+printf ' |  _ \\ __ _| | ___  _ __ __| | ___ _ __\n'
+printf ' | |_) / _` | |/ _ \\| \'__/ _` |/ _ \\ \'__|\n'
+printf ' |  __/ (_| | | (_) | | | (_| |  __/ |\n'
+printf ' |_|   \\__,_|_|\\___/|_|  \\__,_|\\___|_|\n'
+printf '\033[0m'
+printf '\n  \033[1;37mPALORDER iSH ENVIRONMENT\033[0m\n'
+printf '  \033[90mA focused command-line workspace for iOS\033[0m\n\n'
+printf '  \033[90m'
+uname -sr 2>/dev/null || printf 'Alpine userland'
+printf '\033[0m\n\n'
