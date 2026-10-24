@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+while :; do
+  choice=$(dialog --clear --title "Package manager" --menu "Manage packages through Alpine apk." 16 62 6 \
+    "update" "Refresh package indexes" "upgrade" "Upgrade installed packages" "search" "Search package names" "install" "Install package(s)" "remove" "Remove package(s)" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    update) apk update; dialog --title "Package indexes" --msgbox "apk update finished. Review any terminal errors." 8 54 ;;
+    upgrade) if dialog --title "Confirm upgrade" --yesno "Upgrade installed packages now? This may change many system packages." 9 56; then apk upgrade; fi ;;
+    search)
+      term=$(dialog --stdout --title "Search packages" --inputbox "Package name or keyword:" 10 56) || continue
+      [ -n "$term" ] || continue
+      result=$(apk search "$term" 2>&1 || true)
+      dialog --title "Search results" --msgbox "$result" 20 70 ;;
+    install)
+      names=$(dialog --stdout --title "Install packages" --inputbox "Package names separated by spaces:" 10 60) || continue
+      [ -n "$names" ] || continue
+      if dialog --title "Confirm install" --yesno "Install these package names?\n\n$names" 10 60; then
+        set -f; apk add --no-cache $names; set +f
+      fi ;;
+    remove)
+      names=$(dialog --stdout --title "Remove packages" --inputbox "Package names separated by spaces:" 10 60) || continue
+      [ -n "$names" ] || continue
+      if dialog --title "Confirm removal" --yesno "Remove these package names?\n\n$names" 10 60; then
+        set -f; apk del $names; set +f
+      fi ;;
+    back) exit 0 ;;
+  esac
+done
