@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+BASE="https://api.github.com/repos/PalorderSoftWorksOfficial/Palorder-ish"
+usage() {
+  cat <<'HELP'
+palorder-history — release notes and upstream commit registry
+
+Usage:
+  palorder-history             Show latest upstream commits
+  palorder-history --changelog  Show local release notes
+  palorder-history --commits   Show upstream commit registry
+  palorder-history --help      Show this help
+
+The commit registry is retrieved from GitHub's public API and needs network access.
+HELP
+}
+case "${1:-}" in
+  --help|-h) usage; exit 0 ;;
+  --changelog)
+    file="/root/bin/palorder-changelog"
+    [ -r "$file" ] || { echo "Changelog command is missing. Run palorder-update." >&2; exit 1; }
+    exec "$file" ;;
+  ""|--commits) ;;
+  *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+esac
+command -v curl >/dev/null 2>&1 || { echo "curl is required." >&2; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "python3 is required." >&2; exit 1; }
+printf 'Palorder iSH %s — upstream commit registry\n\n' "$(cat /root/.config/palorder/version 2>/dev/null || echo unknown)"
+curl -fLsS --connect-timeout 10 --max-time 30 -H 'Accept: application/vnd.github+json' -H 'User-Agent: Palorder-iSH' "$BASE/commits?per_page=20" |
+python3 -c 'import json,sys,datetime
+try: rows=json.load(sys.stdin)
+except Exception as e: print("Could not parse GitHub commit registry:",e,file=sys.stderr); sys.exit(1)
+if not isinstance(rows,list): print("GitHub returned an unexpected registry response.",file=sys.stderr); sys.exit(1)
+for row in rows:
+ c=row.get("commit",{}); author=c.get("author") or {}; msg=(c.get("message") or "").splitlines()[0]
+ sha=row.get("sha","")[:12]; date=author.get("date","")[:10]
+ print(f"{date:10} {sha:12} {msg}")'
