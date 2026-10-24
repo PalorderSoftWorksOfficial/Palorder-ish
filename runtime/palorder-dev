@@ -33,7 +33,7 @@ case "${1:-path}" in
   urandom)
     count=${2:-32}
     case "$count" in ''|*[!0-9]*) echo "Byte count must be a positive integer." >&2; exit 2 ;; esac
-    [ "$count" -ge 1 ] && [ "$count" -le 1048576 ] || { echo "Byte count must be 1..1048576." >&2; exit 2; }
+    if [ "$count" -lt 1 ] || [ "$count" -gt 1048576 ]; then echo "Byte count must be 1..1048576." >&2; exit 2; fi
     [ -r /dev/urandom ] || { echo "/dev/urandom is unavailable in this environment." >&2; exit 1; }
     exec dd if=/dev/urandom bs=1 count="$count" 2>/dev/null
     ;;
