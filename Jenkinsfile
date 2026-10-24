@@ -17,7 +17,9 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    find runtime -type f -exec sh -n {} \\;
+                    for file in runtime/*; do
+                        sh -n "$file"
+                    done
                     sh -n install.sh
                     sh -n uninstall.sh
                 '''
@@ -30,11 +32,12 @@ pipeline {
                     set -eu
                     grep -Fq 'https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main' install.sh
                     grep -Fq 'palorder-settings' install.sh
-                    grep -Fq 'AGENTS.md' README.md
-                    if grep -Eq 'AGENTS\\.md|README\\.md|CONTRIBUTING\\.md|SECURITY\\.md|Jenkinsfile|\\.github' install.sh; then
-                        echo 'Installer must not include development files in its download allowlist.' >&2
-                        exit 1
-                    fi
+                    for forbidden in 'AGENTS.md' 'README.md' 'CONTRIBUTING.md' 'SECURITY.md' 'Jenkinsfile' '.github'; do
+                        if grep -Fq "$forbidden" install.sh; then
+                            echo "Installer unexpectedly references development file: $forbidden" >&2
+                            exit 1
+                        fi
+                    done
                     for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities; do
                         test -s "runtime/$file"
                     done
