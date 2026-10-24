@@ -49,7 +49,7 @@ if declared.storage then
   if status == "granted" then
     granted.storage = true
   elseif status == nil then
-    local approved = dialog({"--title", "App permission", (manifest.name or app_id) .. " requests permission to save data in its private Palorder app-storage folder. Grant storage access?", "12", "68"})
+    local approved = dialog({"--title", "App permission", "--yesno", (manifest.name or app_id) .. " requests permission to save data in its private Palorder app-storage folder. Grant storage access?", "12", "68"})
     local value = approved ~= nil and "granted\n" or "denied\n"
     local wh = io.open(permission_path, "w")
     if wh then wh:write(value); wh:close() end
@@ -132,7 +132,7 @@ local env=setmetatable({}, {__index=safe,__newindex=function(t,k,v) rawset(t,k,v
 local chunk,err=load(source,"@"..source_path,"t",env)
 if not chunk then fail(err) end
 local instructions=0
-debug.sethook(function() instructions=instructions+1; if instructions>100 then io.stderr:write("palorder-app: instruction budget exceeded\\n"); os.exit(124) end end,"",10000)
+debug.sethook(function() instructions=instructions+1; if instructions>100 then io.stderr:write("palorder-app: instruction budget exceeded\n"); os.exit(124) end end,"",10000)
 local ok,result=xpcall(chunk,debug.traceback)
 debug.sethook()
 if not ok then fail(result) end
