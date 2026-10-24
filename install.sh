@@ -22,10 +22,18 @@ esac
 command -v curl >/dev/null 2>&1 || fail "curl is required. Install it with: apk add curl"
 command -v apk >/dev/null 2>&1 || fail "apk was not found. This installer requires Alpine/iSH."
 mkdir -p "$BIN_DIR" "$CONFIG_DIR"
-if ! command -v dialog >/dev/null 2>&1 || ! command -v lua5.4 >/dev/null 2>&1; then
-  say "Installing dialog and Lua 5.4 runtime..."
-  apk add --no-cache dialog lua5.4 || fail "Could not install dialog/lua5.4. Check /etc/apk/repositories and network."
-fi
+say "Ensuring dialog and Lua 5.4 are installed..."
+apk add --no-cache dialog lua5.4 || fail "Could not install dialog/Lua 5.4. Check /etc/apk/repositories and network."
+if ! command -v dialog >/dev/null 2>&1; then fail "dialog package installed but the dialog command is missing."; fi
+LUA_BIN=""
+for candidate in lua5.4 lua54 lua; do
+  if command -v "$candidate" >/dev/null 2>&1; then
+    version=$("$candidate" -v 2>&1 || :)
+    case "$version" in *"5.4"*) LUA_BIN=$candidate; break ;; esac
+  fi
+done
+[ -n "$LUA_BIN" ] || fail "Lua 5.4 is still unavailable after apk installation. Try: apk update && apk search lua && apk add lua5.4"
+say "Lua interpreter verified: $LUA_BIN"
 STAGE="$CONFIG_DIR/install-stage.$$"; mkdir -p "$STAGE"
 cleanup() { rm -rf "$STAGE"; }; trap cleanup EXIT HUP INT TERM
 for file in $FILES; do
