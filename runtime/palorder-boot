@@ -3,10 +3,10 @@ set -eu
 CONFIG_DIR="/root/.config/palorder"
 theme="midnight"
 banner="1"
-if [ -f "$CONFIG_DIR/settings" ]; then
+[ ! -f "$CONFIG_DIR/settings" ] || {
   theme=$(sed -n 's/^THEME=//p' "$CONFIG_DIR/settings" | head -n 1)
   banner=$(sed -n 's/^SHOW_BANNER=//p' "$CONFIG_DIR/settings" | head -n 1)
-fi
+}
 [ -n "$theme" ] || theme=midnight
 [ -n "$banner" ] || banner=1
 case "$theme" in
@@ -22,15 +22,16 @@ if [ "$banner" = 1 ]; then
   printf '%s\n' \
     '  ____       _                 _' \
     ' |  _ \__ _| | ___  _ __ __| | ___ _ __' \
-    ' | |_) | | | |/ _ \| | | |/ _ \|' \
+    " | |_) / _\x60 | |/ _ \\| '__/ _\x60 |/ _ \\ '__|" \
     ' |  __/ (_| | | (_) | | | (_| |  __/ |' \
     ' |_|   \__,_|_|\___/|_|  \__,_|\___|_|'
   printf '\033[0m'
 fi
 name="Palorder User"
 [ ! -f "$CONFIG_DIR/identity" ] || name=$(cat "$CONFIG_DIR/identity")
-printf '\n  %bPALORDER iSH ENVIRONMENT\033[0m\n' "$color"
+printf '\n  %bPALORDER BOOT MANAGER\033[0m\n' "$color"
 printf '  Welcome, %s\n' "$name"
-printf '  A focused command-line workspace for iOS\n\n'
+printf '  iSH / Alpine userland  |  Interactive session\n'
+printf '  ---------------------------------------------\n'
 uname -sr 2>/dev/null || printf 'Alpine userland'
 printf '\n\n'
