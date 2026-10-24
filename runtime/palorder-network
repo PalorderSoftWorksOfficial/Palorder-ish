@@ -54,7 +54,7 @@ while :; do
   [ "$rows" -le 24 ] || rows=24; [ "$rows" -ge 14 ] || rows=14
   [ "$cols" -le 80 ] || cols=80; [ "$cols" -ge 36 ] || cols=36
   menu_h=$((rows - 8))
-  choice=$(dialog --clear --title "Phone & Network Settings" --menu "iOS-compatible information and network diagnostics. System radio controls are not available to iSH." 18 72 5 \
+  choice=$(dialog --clear --title "Phone & Network Settings" --menu "iOS-compatible information and network diagnostics. System radio controls are not available to iSH." "$rows" "$cols" "$menu_h" \
     "phone" "Device model and available system information" \
     "wifi" "Wi-Fi diagnostics (not a Wi-Fi toggle)" \
     "network" "Interfaces, routes, DNS and HTTPS test" \
