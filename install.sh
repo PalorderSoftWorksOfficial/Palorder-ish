@@ -22,20 +22,31 @@ if ! command -v dialog >/dev/null 2>&1; then
   apk add --no-cache dialog || fail "Could not install dialog. Check network and /etc/apk/repositories."
 fi
 
+STAGE="$CONFIG_DIR/install-stage.$"
+mkdir -p "$STAGE"
+cleanup() { rm -rf "$STAGE"; }
+trap cleanup EXIT HUP INT TERM
+
 for file in $FILES; do
-  tmp="$BIN_DIR/.$file.tmp.$$"
   say "Downloading $file"
-  if ! curl -fLsS --connect-timeout 15 --max-time 120 "$BASE/runtime/$file" -o "$tmp"; then
-    rm -f "$tmp"
-    fail "Download failed for $file."
+  if ! curl -fLsS --connect-timeout 15 --max-time 120 "$BASE/runtime/$file" -o "$STAGE/$file"; then
+    fail "Download failed for $file. Existing runtime files were not replaced."
   fi
-  if [ ! -s "$tmp" ]; then rm -f "$tmp"; fail "Downloaded file is empty: $file"; fi
+  [ -s "$STAGE/$file" ] || fail "Downloaded file is empty: $file"
+  chmod 755 "$STAGE/$file"
+done
+
+for file in $FILES; do
   if [ -f "$BIN_DIR/$file" ]; then cp "$BIN_DIR/$file" "$BACKUP_DIR/$file"; fi
-  chmod 755 "$tmp"
-  mv "$tmp" "$BIN_DIR/$file"
+  mv "$STAGE/$file" "$BIN_DIR/$file"
 done
 
 printf '%s\n' "1" > "$CONFIG_DIR/version"
+if [ -f /root/.profile ]; then
+  grep -q 'export PATH="/root/bin:$PATH"' /root/.profile || printf '%s\n' 'export PATH="/root/bin:$PATH"' >> /root/.profile
+else
+  printf '%s\n' 'export PATH="/root/bin:$PATH"' > /root/.profile
+fi
 [ -f "$CONFIG_DIR/settings" ] || printf '%s\n' 'THEME=midnight' 'SHOW_TIPS=1' > "$CONFIG_DIR/settings"
 [ -f "$CONFIG_DIR/identity" ] || printf '%s\n' 'Palorder User' > "$CONFIG_DIR/identity"
 say "Installation complete. Runtime files only were installed."
