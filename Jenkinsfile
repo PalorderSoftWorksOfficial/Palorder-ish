@@ -50,9 +50,12 @@ pipeline {
                     grep -Fq 'palorder-settings' install.sh
                     grep -Fq 'palorder-lua-host' install.sh
                     grep -Fq 'check-update' install.sh
-                    grep -Fq 'apk add --no-cache dialog lua5.4' install.sh
+                    grep -Fq 'lua5.4' install.sh
+                    grep -Fq 'CORE_PACKAGES=' install.sh
+                    grep -Fq 'pkg-compat apt' runtime/apt
+                    grep -Fq 'pkg-compat pacman' runtime/pacman
                     grep -Fq 'apk update' install.sh
-                    grep -Fq 'ensure_lua' runtime/palorder-app
+                    grep -Fq 'ensure_runtime' runtime/palorder-app
                     grep -Fq 'exec "$LUA_BIN" "$HOST" "$2"' runtime/palorder-app
                     for forbidden in 'AGENTS.md' 'README.md' 'CONTRIBUTING.md' 'SECURITY.md' 'Jenkinsfile' '.github'; do
                         if grep -Fq "$forbidden" install.sh; then
@@ -60,7 +63,7 @@ pipeline {
                             exit 1
                         fi
                     done
-                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version; do
+                    for file in palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman; do
                         test -s "runtime/$file"
                     done
                     test -s docs/LUA_APP_API.md
@@ -73,7 +76,7 @@ pipeline {
                 sh '''
                     set -eu
                     if command -v shellcheck >/dev/null 2>&1; then
-                        shellcheck -s sh install.sh uninstall.sh runtime/palorder runtime/palorder-app runtime/check-update runtime/palorder-control runtime/palorder-update
+                        shellcheck -s sh install.sh uninstall.sh runtime/palorder runtime/palorder-app runtime/check-update runtime/palorder-control runtime/palorder-update runtime/pkg-compat runtime/apt runtime/apt-get runtime/pacman
                     else
                         echo 'ShellCheck is not installed on this Jenkins agent; syntax checks passed, ShellCheck skipped.'
                     fi

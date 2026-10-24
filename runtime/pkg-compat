@@ -1,0 +1,110 @@
+#!/bin/sh
+set -eu
+frontend=${1:-}
+[ "$#" -gt 0 ] || { echo "Usage: apt|apt-get|pacman COMMAND [OPTIONS]" >&2; exit 2; }
+shift
+[ "$#" -gt 0 ] || { echo "Usage: $frontend COMMAND [OPTIONS]" >&2; exit 2; }
+
+# Debian-style global confirmation/quiet flags do not apply to apk.
+while [ "$#" -gt 1 ]; do
+  case "$1" in -y|--yes|-q|-qq|--quiet) shift ;; *) break ;; esac
+done
+command_name=$1
+shift
+
+case "$frontend:$command_name" in
+  apt:update|apt-get:update)
+    exec apk update
+    ;;
+  apt:upgrade|apt:full-upgrade|apt:dist-upgrade|apt-get:upgrade|apt-get:dist-upgrade)
+    exec apk upgrade
+    ;;
+  apt:install|apt-get:install)
+    packages=""
+    for item do
+      case "$item" in -y|--yes|--no-install-recommends|--no-install-suggests) ;; *) packages="$packages $item" ;; esac
+    done
+    # Package names cannot contain spaces; this removes Debian-only flags wherever they appear.
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
+    [ "$#" -gt 0 ] || { echo "Usage: $frontend install PACKAGE..." >&2; exit 2; }
+    exec apk add --no-cache "$@"
+    ;;
+  apt:remove|apt:purge|apt-get:remove|apt-get:purge)
+    packages=""
+    for item do case "$item" in -y|--yes) ;; *) packages="$packages $item" ;; esac; done
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
+    [ "$#" -gt 0 ] || { echo "Usage: $frontend $command_name PACKAGE..." >&2; exit 2; }
+    exec apk del "$@"
+    ;;
+  apt:search|apt-get:search)
+    [ "$#" -gt 0 ] || { echo "Usage: $frontend search TERM" >&2; exit 2; }
+    exec apk search "$@"
+    ;;
+  apt:show|apt-get:show)
+    [ "$#" -gt 0 ] || { echo "Usage: $frontend show PACKAGE" >&2; exit 2; }
+    exec apk info -a "$@"
+    ;;
+  apt:list|apt-get:list)
+    exec apk info
+    ;;
+  apt:policy|apt-get:policy)
+    [ "$#" -gt 0 ] || { echo "Usage: $frontend policy PACKAGE" >&2; exit 2; }
+    exec apk policy "$@"
+    ;;
+  apt:clean|apt:autoclean|apt-get:clean|apt-get:autoclean)
+    rm -f /var/cache/apk/*
+    exit 0
+    ;;
+  pacman:-Syu|pacman:-Syyu)
+    apk update
+    exec apk upgrade
+    ;;
+  pacman:-Sy|pacman:-Syy)
+    exec apk update
+    ;;
+  pacman:-Su)
+    exec apk upgrade
+    ;;
+  pacman:-S|pacman:-Sy*)
+    packages=""
+    for item do case "$item" in --needed|--noconfirm|--overwrite\=*) ;; *) packages="$packages $item" ;; esac; done
+    # shellcheck disable=SC2086
+    set -f; set -- $packages; set +f
+    [ "$#" -gt 0 ] || { echo "Usage: pacman -S PACKAGE..." >&2; exit 2; }
+    exec apk add --no-cache "$@"
+    ;;
+  pacman:-R|pacman:-Rs|pacman:-Rns|pacman:-Rsc)
+    [ "$#" -gt 0 ] || { echo "Usage: pacman -R PACKAGE..." >&2; exit 2; }
+    exec apk del "$@"
+    ;;
+  pacman:-Ss)
+    [ "$#" -gt 0 ] || { echo "Usage: pacman -Ss TERM" >&2; exit 2; }
+    exec apk search "$@"
+    ;;
+  pacman:-Si)
+    [ "$#" -gt 0 ] || { echo "Usage: pacman -Si PACKAGE" >&2; exit 2; }
+    exec apk info -a "$@"
+    ;;
+  pacman:-Q|pacman:-Qe|pacman:-Qq)
+    exec apk info
+    ;;
+  pacman:-Qi)
+    [ "$#" -gt 0 ] || { echo "Usage: pacman -Qi PACKAGE" >&2; exit 2; }
+    exec apk info -a "$@"
+    ;;
+  pacman:-Sc|pacman:-Scc)
+    rm -f /var/cache/apk/*
+    exit 0
+    ;;
+  *)
+    cat >&2 <<HELP
+$frontend compatibility wrapper for Alpine apk
+Supported apt commands: update, upgrade, full-upgrade, install, remove, purge, search, show, list, policy, clean
+Supported pacman operations: -S, -Sy, -Syu, -R, -Rs, -Rns, -Ss, -Si, -Q, -Qi, -Sc
+These are translations, not a Debian/Arch package database. Package names must exist in Alpine repositories.
+HELP
+    exit 2
+    ;;
+esac

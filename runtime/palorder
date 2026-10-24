@@ -10,6 +10,8 @@ Usage:
   palorder                 Open the interactive boot menu
   palorder help            Show this command reference
   palorder-app --help      Manage/run Lua applications
+  apt install PACKAGE     Install Alpine packages using apt-style syntax
+  pacman -S PACKAGE       Install Alpine packages using pacman-style syntax
   check-update --help      Check upstream runtime versions/files
   palorder-update --help   Update managed runtime scripts
   palorder-control         Open Control Center
