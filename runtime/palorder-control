@@ -2,35 +2,29 @@
 set -eu
 BIN_DIR="/root/bin"
 while :; do
-  choice=$(dialog --clear --title "Palorder Control Center" --menu "System tools and workspace controls." 19 68 8 \
-    "terminal" "Open terminal session" \
-    "packages" "Package manager" \
-    "files" "Browse files (if a file manager exists)" \
-    "editor" "Open text editor" \
-    "monitor" "System / storage monitor" \
-    "network" "Network diagnostics" \
-    "settings" "Appearance and preferences" \
-    "setup" "Setup wizard" \
-    "back" "Return to boot menu" 3>&1 1>&2 2>&3) || exit 0
+  choice=$(dialog --clear --title "Palorder Control Center" --menu "Workspace, development and runtime controls." 21 70 12 \
+    "terminal" "Open terminal session" "apps" "Lua application manager" "check" "Check for Palorder updates" \
+    "packages" "Package manager" "devtools" "Install developer toolchain" "files" "Browse files (if available)" \
+    "editor" "Open text editor" "monitor" "System / storage monitor" "network" "Network diagnostics" \
+    "settings" "Appearance and preferences" "setup" "Setup wizard" "back" "Return to boot menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
-    terminal) "$BIN_DIR/palorder-terminal" ;;
+    terminal) "$BIN_DIR/palorder-terminal" ;; apps) "$BIN_DIR/palorder-app" ;; check) "$BIN_DIR/check-update" ;;
     packages) "$BIN_DIR/palorder-packages" ;;
+    devtools)
+      if dialog --title "Developer toolchain" --yesno "Install Lua 5.4, Git, Python, pip, build tools, headers, curl, jq, nano, vim, tmux and OpenSSH? This downloads packages from configured Alpine repositories." 12 70; then
+        if apk add --no-cache lua5.4 git python3 py3-pip build-base musl-dev linux-headers curl jq nano vim tmux openssh-client ca-certificates; then
+          dialog --title "Developer tools" --msgbox "Installed. Lua apps: palorder-app --help\nUpdate checker: check-update --help" 9 60
+        else dialog --title "Install failed" --msgbox "apk reported an error. Check repositories/network and retry." 8 56; fi
+      fi ;;
     files)
       if command -v mc >/dev/null 2>&1; then mc
       elif command -v ranger >/dev/null 2>&1; then ranger
-      else dialog --title "File browser unavailable" --msgbox "Install mc or ranger from the package manager to enable interactive file browsing. The workspace is /root/workspace by default." 9 62
-      fi ;;
+      else dialog --title "File browser unavailable" --msgbox "Install mc or ranger. Workspace defaults to /root/workspace." 9 62; fi ;;
     editor)
       if command -v vim >/dev/null 2>&1; then vim
       elif command -v nano >/dev/null 2>&1; then nano
-      else dialog --title "Editor unavailable" --msgbox "Install nano or vim with apk first." 7 44
-      fi ;;
-    monitor)
-      info="System:\n$(uname -a 2>&1)\n\nStorage:\n$(df -h 2>&1)\n\nMemory (when available):\n$(free -h 2>&1 || echo 'free is not installed')"
-      dialog --title "System monitor" --msgbox "$info" 22 72 ;;
-    network) "$BIN_DIR/palorder-utilities" ;;
-    settings) "$BIN_DIR/palorder-settings" ;;
-    setup) "$BIN_DIR/palorder-setup" ;;
-    back) exit 0 ;;
+      else dialog --title "Editor unavailable" --msgbox "Install nano or vim with apk first." 7 44; fi ;;
+    monitor) info="System:\n$(uname -a 2>&1)\n\nStorage:\n$(df -h 2>&1)\n\nMemory:\n$(free -h 2>&1 || echo 'free is not installed')"; dialog --title "System monitor" --msgbox "$info" 22 72 ;;
+    network) "$BIN_DIR/palorder-utilities" ;; settings) "$BIN_DIR/palorder-settings" ;; setup) "$BIN_DIR/palorder-setup" ;; back) exit 0 ;;
   esac
 done
