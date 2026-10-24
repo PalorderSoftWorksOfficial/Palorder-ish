@@ -5,6 +5,7 @@ SETTINGS="$CONFIG_DIR/settings"
 IDENTITY="$CONFIG_DIR/identity"
 mkdir -p "$CONFIG_DIR"
 [ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$SETTINGS"
+grep -q '^SHELL=' "$SETTINGS" || printf 'SHELL=/bin/bash\n' >> "$SETTINGS"
 [ -f "$IDENTITY" ] || printf '%s\n' 'Palorder User' > "$IDENTITY"
 read_setting() { sed -n "s/^$1=//p" "$SETTINGS" | head -n 1; }
 write_setting() {
