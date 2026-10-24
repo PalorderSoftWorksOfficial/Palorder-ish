@@ -63,7 +63,7 @@ while :; do
     packages) "$BIN_DIR/palorder-packages" ;;
     network) "$BIN_DIR/palorder-network" ;;
     shell) "$BIN_DIR/palorder-shell" ;;
-    history) "$BIN_DIR/palorder-history" ;;
+    history) if "$BIN_DIR/palorder-history"; then :; else dialog --title "History unavailable" --msgbox "Could not retrieve commit history. Check network access and try again." 8 60; fi ;;
     check) if "$BIN_DIR/check-update"; then dialog --title "Update check" --msgbox "Check complete. See terminal output for details." 8 56; else dialog --title "Update check failed" --msgbox "Could not check updates. Check network access and try again." 8 56; fi ;;
     setup) "$BIN_DIR/palorder-setup" ;;
     utilities) "$BIN_DIR/palorder-utilities" ;;
