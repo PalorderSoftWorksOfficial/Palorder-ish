@@ -65,8 +65,11 @@ while :; do
         log="${HOME:-/root}/.config/palorder/package-manager.log"
         set -f
         # shellcheck disable=SC2086
-        if [ "$choice" = install ]; then apk add --no-cache $names >"$log" 2>&1; else apk del $names >"$log" 2>&1; fi
-        rc=$?
+        if [ "$choice" = install ]; then
+          if apk add --no-cache $names >"$log" 2>&1; then rc=0; else rc=$?; fi
+        else
+          if apk del $names >"$log" 2>&1; then rc=0; else rc=$?; fi
+        fi
         set +f
         dialog --title "Package operation (exit $rc)" --textbox "$log" 22 76
       fi ;;
