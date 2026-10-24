@@ -7,84 +7,56 @@ usage() {
 palorder-app — manage Lua applications
 
 Usage:
-  palorder-app list
-  palorder-app run APP_ID
-  palorder-app create APP_ID
-  palorder-app info APP_ID
-  palorder-app --help
+  palorder-app                 Open the interactive Application Center
+  palorder-app list            List installed app IDs
+  palorder-app run APP_ID      Run an installed app
+  palorder-app create APP_ID   Create a starter app and manifest
+  palorder-app info APP_ID     Show app metadata and paths
+  palorder-app --help          Show this help
 
 Apps live in ~/.local/share/palorder/apps/APP_ID/{manifest,main.lua}.
-IDs match ^[a-z][a-z0-9_-]{0,47}$. New apps are local files; review code
-before running it. The runtime removes direct os/io/debug/package access
-and arbitrary shell execution. This is not a separate OS-user sandbox.
+IDs match ^[a-z][a-z0-9_-]{0,47}$. Review app source before running it.
+The runtime removes direct os/io/debug/package access and has no public
+arbitrary-shell API. This is not a separate OS-user sandbox.
 HELP
 }
-valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}case "${1:-}" in
-  --help|-h|help|"") usage; exit 0 ;;
-  list)
-    mkdir -p "$APP_ROOT"; found=0
-    for file in "$APP_ROOT"/*/main.lua; do
-      [ -f "$file" ] || continue; found=1
-      printf '%s\n' "${file%/main.lua}" | sed "s|^$APP_ROOT/||"
-    done
-    [ "$found" -eq 1 ] || echo "No apps installed. Create one: palorder-app create hello"
-    ;;
-  run)
-    [ "$#" -eq 2 ] || { echo "Usage: palorder-app run APP_ID" >&2; exit 2; }
-    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    command -v lua5.4 >/dev/null 2>&1 || { echo "Lua missing. Install: apk add lua5.4 dialog" >&2; exit 1; }
-    exec "$HOST" "$2"
-    ;;
-  create)
-    [ "$#" -eq 2 ] || { echo "Usage: palorder-app create APP_ID" >&2; exit 2; }
-    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    dir="$APP_ROOT/$2"
-    [ ! -e "$dir" ] || { echo "App already exists: $dir" >&2; exit 1; }
-    mkdir -p "$dir"
-    cat > "$dir/manifest" <<EOF
-name=$2
-version=0.1.0
-permissions=storage
-EOF
-    cat > "$dir/main.lua" <<'LUA'
-api.ui.message("Hello from Lua", "This app runs inside Palorder's restricted Lua environment.")
-local previous = api.storage.get("launches") or "0"
-local count = (tonumber(previous) or 0) + 1
-api.storage.set("launches", tostring(count))
-api.ui.message(api.app.name, "Launch count: " .. count .. "\nRuntime API: " .. api.version)
-LUA
-    chmod 600 "$dir/manifest" "$dir/main.lua"
-    printf 'Created %s\nRun: palorder-app run %s\nEdit: %s/main.lua\n' "$dir" "$2" "$dir"
-    ;;
-  info)
-    [ "$#" -eq 2 ] || { echo "Usage: palorder-app info APP_ID" >&2; exit 2; }
-    valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    dir="$APP_ROOT/$2"; [ -f "$dir/main.lua" ] || { echo "App not found: $2" >&2; exit 1; }
-    printf 'App: %s\nDirectory: %s\n\nManifest:\n' "$2" "$dir"
-    cat "$dir/manifest" 2>/dev/null || :
-    printf '\nSource: %s/main.lua\n' "$dir"
-    ;;
-  *) echo "Unknown subcommand: $1" >&2; usage >&2; exit 2 ;;
-esac
-; }
-if [ "$#" -eq 0 ] && command -v dialog >/dev/null 2>&1; then
+valid_id() { printf '%s' "$1" | grep -Eq '^[a-z][a-z0-9_-]{0,47}$'; }
+run_ui() {
   while :; do
-    choice=$(dialog --clear --title "Lua Application Center" --menu "Run local Lua apps or create a new app." 15 64 5 "list" "List installed apps" "run" "Run an app by ID" "create" "Create a Lua app" "help" "Command/API help" "exit" "Return to desktop" 3>&1 1>&2 2>&3) || exit 0
+    choice=$(dialog --clear --title "Lua Application Center" --menu "Run local Lua apps or create a new app." 15 64 5 \
+      "list" "List installed apps" "run" "Run an app by ID" "create" "Create a Lua app" "help" "Command/API help" "exit" "Return to desktop" 3>&1 1>&2 2>&3) || return 0
     case "$choice" in
-      list) result=$("$0" list); dialog --title "Installed Lua apps" --msgbox "$result" 18 64 ;;
-      run) id=$(dialog --stdout --title "Run Lua app" --inputbox "App ID:" 9 52) || continue; valid_id "$id" || { dialog --title "Invalid ID" --msgbox "Use lowercase letters, digits, underscore or hyphen; begin with a letter." 8 60; continue; }; "$0" run "$id" ;;
-      create) id=$(dialog --stdout --title "Create Lua app" --inputbox "New app ID:" 9 52) || continue; valid_id "$id" || { dialog --title "Invalid ID" --msgbox "Use lowercase letters, digits, underscore or hyphen; begin with a letter." 8 60; continue; }; "$0" create "$id"; dialog --title "Lua app created" --msgbox "Edit ~/.local/share/palorder/apps/$id/main.lua, then choose Run app." 9 64 ;;
+      list)
+        result=$("$0" list)
+        dialog --title "Installed Lua apps" --msgbox "$result" 18 64 ;;
+      run)
+        id=$(dialog --stdout --title "Run Lua app" --inputbox "App ID:" 9 52) || continue
+        valid_id "$id" || { dialog --title "Invalid ID" --msgbox "Use lowercase letters, digits, underscore or hyphen; begin with a letter." 8 60; continue; }
+        "$0" run "$id" ;;
+      create)
+        id=$(dialog --stdout --title "Create Lua app" --inputbox "New app ID:" 9 52) || continue
+        valid_id "$id" || { dialog --title "Invalid ID" --msgbox "Use lowercase letters, digits, underscore or hyphen; begin with a letter." 8 60; continue; }
+        "$0" create "$id"
+        dialog --title "Lua app created" --msgbox "Edit ~/.local/share/palorder/apps/$id/main.lua, then choose Run app." 9 64 ;;
       help) "$0" --help | dialog --title "Lua application help" --programbox 22 72 ;;
-      exit) exit 0 ;;
+      exit) return 0 ;;
     esac
   done
+}
+if [ "$#" -eq 0 ]; then
+  command -v dialog >/dev/null 2>&1 || { usage; exit 0; }
+  run_ui
+  exit 0
 fi
-case "${1:-}" in
-  --help|-h|help|"") usage; exit 0 ;;
+case "$1" in
+  --help|-h|help) usage ;;
   list)
-    mkdir -p "$APP_ROOT"; found=0
+    [ "$#" -eq 1 ] || { echo "Usage: palorder-app list" >&2; exit 2; }
+    mkdir -p "$APP_ROOT"
+    found=0
     for file in "$APP_ROOT"/*/main.lua; do
-      [ -f "$file" ] || continue; found=1
+      [ -f "$file" ] || continue
+      found=1
       printf '%s\n' "${file%/main.lua}" | sed "s|^$APP_ROOT/||"
     done
     [ "$found" -eq 1 ] || echo "No apps installed. Create one: palorder-app create hello"
@@ -119,7 +91,8 @@ LUA
   info)
     [ "$#" -eq 2 ] || { echo "Usage: palorder-app info APP_ID" >&2; exit 2; }
     valid_id "$2" || { echo "Invalid APP_ID." >&2; exit 2; }
-    dir="$APP_ROOT/$2"; [ -f "$dir/main.lua" ] || { echo "App not found: $2" >&2; exit 1; }
+    dir="$APP_ROOT/$2"
+    [ -f "$dir/main.lua" ] || { echo "App not found: $2" >&2; exit 1; }
     printf 'App: %s\nDirectory: %s\n\nManifest:\n' "$2" "$dir"
     cat "$dir/manifest" 2>/dev/null || :
     printf '\nSource: %s/main.lua\n' "$dir"
