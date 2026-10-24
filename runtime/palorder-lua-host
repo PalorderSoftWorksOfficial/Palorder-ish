@@ -31,7 +31,7 @@ os.execute("mkdir -p " .. shell_quote(app_data))
 local function dialog(args)
   local cmd={"dialog"}
   for _,v in ipairs(args) do cmd[#cmd+1]=shell_quote(v) end
-  local p=io.popen(table.concat(cmd," ") .. " 2>/dev/null","r")
+  local p=io.popen(table.concat(cmd," ") .. " 2>/dev/tty","r")
   if not p then return nil end
   local out=p:read("*a")
   local ok=p:close()
