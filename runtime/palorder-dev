@@ -22,7 +22,7 @@ case "${1:-path}" in
   path) mkdir -p "$ROOT"; printf '%s\n' "$ROOT"; exit 0 ;;
   setup)
     mkdir -p "$ROOT"
-    for dev in urandom random null zero; do [ ! -e "/dev/$dev" ] || ln -sf "/dev/$dev" "$ROOT/$dev"; done
+    for dev in urandom random null zero; do [ ! -e "/dev/$dev" ] || ln -sf "/dev/$dev" "$ROOT/$dev" 2>/dev/null || :; done
     if mkdir -p /dev/palorder 2>/dev/null; then
       for dev in urandom random null zero; do [ ! -e "/dev/$dev" ] || ln -sf "/dev/$dev" "/dev/palorder/$dev" 2>/dev/null || :; done
       printf '%s\n' 'Created best-effort /dev/palorder symlinks.'
