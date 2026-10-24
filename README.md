@@ -8,7 +8,7 @@ Open iSH and run:
 
     curl -fsSL https://raw.githubusercontent.com/PalorderSoftWorksOfficial/Palorder-ish/main/install.sh | sh
 
-The installer backs up and updates managed runtime scripts by default, preserves preferences and display name, and downloads only an explicit allowlist from runtime/. Use --safe to install missing files only.
+The installer backs up and updates managed runtime scripts by default, preserves preferences and display name, and downloads only an explicit allowlist from runtime/. It installs and verifies Lua 5.4 and dialog on every install/update; if Alpine package indexes are stale, it refreshes them and retries. The Application Center also attempts to repair a missing Lua runtime. Use --safe to install missing files only.
 
 ## Updates
 
