@@ -1,0 +1,23 @@
+#!/bin/sh
+set -eu
+BIN_DIR="/root/bin"
+[ ! -x "$BIN_DIR/palorder-boot" ] || "$BIN_DIR/palorder-boot"
+while :; do
+  choice=$(dialog --clear --backtitle "PALORDER • iSH ENVIRONMENT" --title "PALORDER iSH" --menu "\n  Alpine tools, organized for iPhone and iPad.\n\n  Choose an action." 18 62 8 \
+    "setup" "Setup and environment checks" \
+    "packages" "Package manager" \
+    "utilities" "System and network utilities" \
+    "task" "Run a command" \
+    "update" "Update Palorder" \
+    "about" "About this environment" \
+    "exit" "Exit menu" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    setup) "$BIN_DIR/palorder-setup" ;;
+    packages) "$BIN_DIR/palorder-packages" ;;
+    utilities) "$BIN_DIR/palorder-utilities" ;;
+    task) "$BIN_DIR/palorder-run-task" ;;
+    update) "$BIN_DIR/palorder-update" ;;
+    about) dialog --title "About Palorder iSH" --msgbox "Palorder iSH is a terminal UI layer for iSH and Alpine Linux.\n\nIt is not a full Linux VM or graphical desktop. Some packages and Linux features are unavailable under iOS emulation." 10 58 ;;
+    exit) clear; exit 0 ;;
+  esac
+done
