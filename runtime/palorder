@@ -36,7 +36,7 @@ while :; do
     "terminal" "Terminal session" "control" "Control Center" "apps" "Lua application manager" "check" "Check for Palorder updates" "setup" "First-run setup wizard" "packages" "Package manager" "utilities" "System utilities and diagnostics" "task" "Run a command" "update" "Update / repair Palorder" "safe" "Safe shell (skip Palorder UI)" "exit" "Exit to shell" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     terminal) "$BIN_DIR/palorder-terminal" ;; control) "$BIN_DIR/palorder-control" ;;
-    apps) "$BIN_DIR/palorder-app" ;; check) "$BIN_DIR/check-update"; dialog --title "Update check" --msgbox "Check complete. See terminal output for details." 8 56 ;;
+    apps) "$BIN_DIR/palorder-app" ;; check) if "$BIN_DIR/check-update"; then dialog --title "Update check" --msgbox "Check complete. See terminal output for details." 8 56; else dialog --title "Update check failed" --msgbox "Could not check updates. Check network access and try again." 8 56; fi ;;
     setup) "$BIN_DIR/palorder-setup" ;; packages) "$BIN_DIR/palorder-packages" ;; utilities) "$BIN_DIR/palorder-utilities" ;;
     task) "$BIN_DIR/palorder-run-task" ;; update) "$BIN_DIR/palorder-update" ;;
     safe) clear 2>/dev/null || :; exec sh ;; exit) clear 2>/dev/null || :; exit 0 ;;
