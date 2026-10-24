@@ -1,0 +1,28 @@
+#!/bin/sh
+cat <<'CHANGELOG'
+PALORDER iSH — RELEASE NOTES
+============================
+
+0.5.0 — device tools and package workflow
+- Add a package manager workflow with installed-package listing and package details.
+- Add configurable default shell; Bash is the default, with optional Zsh and POSIX shells.
+- Add phone/network diagnostics for interfaces, routes, DNS, HTTPS connectivity and device information exposed by iSH.
+- Add a best-effort /dev/palorder device-symlink setup and a bounded random-byte helper.
+- Add upstream commit registry and release-history commands.
+- Expand the Lua dialog/window API.
+- Make network diagnostics work without assuming the ip command exists.
+
+0.4.0 — package bootstrap
+- Install and verify Lua 5.4 and dialog during setup.
+- Install Bash, core utilities and Git; attempt optional developer tools.
+- Add apt/apt-get and pacman compatibility wrappers translating supported commands to apk.
+
+0.3.0 — Lua app runtime
+- Add Lua 5.4 application host, manifests, per-app data and storage permission prompts.
+- Add update checker and developer toolchain entry.
+
+LIMITATIONS
+- iSH is an iOS app sandbox, not a full Linux VM.
+- Wi-Fi/Bluetooth toggles, iOS Settings access, hardware model and iOS version are not generally exposed to shell processes.
+- /dev/palorder creation is best-effort; use palorder-dev path if iSH denies writes to /dev.
+CHANGELOG
