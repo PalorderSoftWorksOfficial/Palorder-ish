@@ -26,7 +26,7 @@ while :; do
     packages) "$BIN_DIR/palorder-packages" ;;
     network) "$BIN_DIR/palorder-network" ;;
     shell) "$BIN_DIR/palorder-shell" ;;
-    history) "$BIN_DIR/palorder-history" ;;
+    history) if "$BIN_DIR/palorder-history"; then :; else dialog --title "History unavailable" --msgbox "Could not retrieve commit history. Check network access and try again." 8 60; fi ;;
     devtools)
       if dialog --title "Developer toolchain" --yesno "Install Lua 5.4, Git, Python, pip, build tools, headers, curl, jq, nano, vim, tmux and OpenSSH? This downloads packages from configured Alpine repositories." 12 70; then
         if apk add --no-cache lua5.4 git python3 py3-pip build-base musl-dev linux-headers curl jq nano vim tmux openssh-client ca-certificates; then
