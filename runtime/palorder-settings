@@ -4,7 +4,7 @@ CONFIG_DIR="/root/.config/palorder"
 SETTINGS="$CONFIG_DIR/settings"
 IDENTITY="$CONFIG_DIR/identity"
 mkdir -p "$CONFIG_DIR"
-[ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' > "$SETTINGS"
+[ -f "$SETTINGS" ] || printf '%s\n' 'THEME=midnight' 'SHOW_BANNER=1' 'SHELL=/bin/bash' > "$SETTINGS"
 [ -f "$IDENTITY" ] || printf '%s\n' 'Palorder User' > "$IDENTITY"
 read_setting() { sed -n "s/^$1=//p" "$SETTINGS" | head -n 1; }
 write_setting() {
@@ -16,7 +16,7 @@ write_setting() {
 while :; do
   theme=$(read_setting THEME); banner=$(read_setting SHOW_BANNER); name=$(cat "$IDENTITY")
   choice=$(dialog --clear --title "Appearance and preferences" --menu "Theme: $theme | Boot banner: $banner | Name: $name" 17 64 5 \
-    "theme" "Choose color theme" "banner" "Toggle boot banner" "name" "Change display name" "reset" "Reset theme and banner" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
+    "theme" "Choose color theme" "banner" "Toggle boot banner" "name" "Change display name" "reset" "Reset theme and banner" "shell" "Choose default shell (Bash by default)" "back" "Return to main menu" 3>&1 1>&2 2>&3) || exit 0
   case "$choice" in
     theme)
       selected=$(dialog --stdout --title "Color theme" --menu "Choose a palette:" 15 52 5 \
@@ -29,6 +29,6 @@ while :; do
       printf '%s\n' "$new_name" > "$IDENTITY" ;;
     reset)
       if dialog --title "Reset preferences" --yesno "Reset theme and boot banner only? Your display name and installed packages remain unchanged." 10 62; then write_setting THEME midnight; write_setting SHOW_BANNER 1; fi ;;
-    back) exit 0 ;;
+    shell) /root/bin/palorder-shell ;;\n    back) exit 0 ;;
   esac
 done
