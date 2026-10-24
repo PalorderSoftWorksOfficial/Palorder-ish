@@ -36,7 +36,7 @@ if [ "$mode" = version ]; then
   if [ "$local_version" = "$remote" ]; then echo "Palorder is up to date."; else echo "An update may be available. Run: palorder-update"; fi
   exit 0
 fi
-FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version"
+FILES="palorder palorder-boot palorder-ui palorder-setup palorder-settings palorder-packages palorder-update palorder-run-task palorder-utilities palorder-terminal palorder-control palorder-lua-host palorder-app check-update palorder-version pkg-compat apt apt-get pacman"
 tmp="$CONFIG/check.$$"
 mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
